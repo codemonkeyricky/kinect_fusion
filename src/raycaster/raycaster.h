@@ -5,7 +5,7 @@
 
 #include "Volume.h"
 #include "Frame.h"
-#include "Ray.h"
+#include "ray.h"
 
 class RayCaster {
 private:
@@ -20,7 +20,7 @@ public:
 
 	void changeFrame(Frame& frame);
 	void changeVolume(Volume& vol);
-	Frame& rayCast();
+	Frame& raycast();
 };
 
 #endif // !RAYCASTER_H

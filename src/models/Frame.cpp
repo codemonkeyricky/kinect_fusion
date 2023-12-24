@@ -18,6 +18,9 @@ Frame::Frame(const Frame& other) {
     mNormalsGlobal = other.mNormalsGlobal;
     extrinsicMatrix = other.extrinsicMatrix;
     intrinsicMatrix = other.intrinsicMatrix;
+
+    mVerticesGlobal_vector4f = other.mVerticesGlobal_vector4f;
+    mNormalGlobal_vector4f = other.mNormalGlobal_vector4f;
 }
 
 Frame::Frame(const float* depthMap, const BYTE* colorMap,
@@ -33,7 +36,7 @@ Frame::Frame(const float* depthMap, const BYTE* colorMap,
     setExtrinsicMatrix(depthExtrinsics);
 
     intrinsicMatrix = depthIntrinsics;
-    std::cout << "Frame created!" << std::endl;
+    // std::cout << "Frame created!" << std::endl;
 }
 
 Eigen::Vector3f Frame::getVertexGlobal(size_t idx) const { return mVerticesGlobal->at(idx); }
@@ -62,20 +65,33 @@ std::vector<Eigen::Vector3f>& Frame::getVertexMapGlobal() {
     return *mVerticesGlobal;
 }
 
+std::vector<vector4f>& Frame::getVertexMapGlobal_vector4f() {
+    return *mVerticesGlobal_vector4f;
+}
+
+std::vector<vector4f>& Frame::getNormalMapGlobal_vector4f() {
+    return *mNormalGlobal_vector4f;
+}
+
 std::vector<Eigen::Vector3f>& Frame::getNormalMapGlobal() { return *mNormalsGlobal; }
 
-Eigen::Vector3f Frame::projectPointIntoFrame(const Eigen::Vector3f& point) {
+Eigen::Vector3f Frame::projectPointIntoFrame(const Eigen::Vector3f &point)
+{
     const auto rotation = extrinsicMatrix.block(0, 0, 3, 3);
     const auto translation = extrinsicMatrix.block(0, 3, 3, 1);
     return rotation * point + translation;
 }
 
-void Frame::setExtrinsicMatrix(const Eigen::Matrix4f& extMatrix) {
+void Frame::setExtrinsicMatrix(const Eigen::Matrix4f &extMatrix)
+{
     extrinsicMatrix = extMatrix;
     Eigen::Matrix4f extrinsicMatrixInv = extrinsicMatrix.inverse();
     const auto rotation = extrinsicMatrixInv.block(0, 0, 3, 3);
     mVerticesGlobal = std::make_shared<std::vector<Eigen::Vector3f>>(transformPoints(*mVertices, extrinsicMatrixInv));
     mNormalsGlobal = std::make_shared<std::vector<Eigen::Vector3f>>(rotatePoints(*mNormals, rotation));
+
+    mVerticesGlobal_vector4f = std::make_shared<std::vector<vector4f>>(transformPoints(*mVertices, extrinsicMatrixInv, 0));
+    mNormalGlobal_vector4f = std::make_shared<std::vector<vector4f>>(rotatePoints2(*mNormals, rotation, 0));
 }
 
 Eigen::Vector2i Frame::projectOntoImgPlane(const Eigen::Vector3f& point) {
@@ -87,9 +103,59 @@ Eigen::Vector2i Frame::projectOntoImgPlane(const Eigen::Vector3f& point) {
     return Eigen::Vector2i((int)round(projected.x()), (int)round(projected.y()));
 }
 
+std::vector<vector4f> Frame::transformPoints(
+    const std::vector<Eigen::Vector3f> &points,
+    const Eigen::Matrix4f &transformation,
+    bool dummy)
+{
+    const Eigen::Matrix3f rotation = transformation.block(0, 0, 3, 3);
+    const Eigen::Vector3f translation = transformation.block(0, 3, 3, 1);
+    std::vector<vector4f> transformed(points.size());
+
+    for (size_t idx = 0; idx < points.size(); ++idx)
+    {
+        if (points[idx].allFinite())
+        {
+            auto rv = rotation * points[idx] + translation;
+            for (auto i = 0; i < 3; ++i)
+                transformed[idx][i] = rv[i];
+            transformed[idx][3] = 0;
+        }
+        else
+            for (auto i = 0; i < 4; ++i)
+                transformed[idx][i] = MINF;
+    }
+    return transformed;
+}
+
+std::vector<vector4f> Frame::rotatePoints2(
+    const std::vector<Eigen::Vector3f> &points,
+    const Eigen::Matrix3f &rotation,
+    bool dummy)
+{
+    std::vector<vector4f> transformed(points.size());
+
+    for (size_t idx = 0; idx < points.size(); ++idx)
+    {
+        if (points[idx].allFinite())
+        {
+            auto rv = rotation * points[idx];
+            for (auto i = 0; i < 3; ++i)
+                transformed[idx][i] = rv[i];
+            transformed[idx][3] = 0;
+        }
+        else
+            for (auto i = 0; i < 4; ++i)
+                transformed[idx][i] = MINF;
+    }
+    return transformed;
+}
+
 std::vector<Eigen::Vector3f> Frame::transformPoints(
     const std::vector<Eigen::Vector3f>& points,
-    const Eigen::Matrix4f& transformation) {
+    const Eigen::Matrix4f& transformation
+    ) 
+{
     const Eigen::Matrix3f rotation = transformation.block(0, 0, 3, 3);
     const Eigen::Vector3f translation = transformation.block(0, 3, 3, 1);
     std::vector<Eigen::Vector3f> transformed(points.size());
@@ -131,15 +197,22 @@ void Frame::computeVertexMap(const float* depthMap,
         );
     mVertices->reserve(depthHeight * depthWidth);
 
-    for (size_t i = 0; i < depthHeight; i++) {
-        for (size_t j = 0; j < depthWidth; j++) {
+    for (size_t i = 0; i < depthHeight; i++)
+    {
+        for (size_t j = 0; j < depthWidth; j++)
+        {
             size_t idx = i * depthWidth + j;
             float depth = depthMap[idx];
-            if (depth != MINF) {
-                mVertices->emplace_back(
-                    Vector3f((j - cX) / fX * depth, (i - cY) / fY * depth, depth));
+            if (depth != MINF)
+            {
+                Vector3f v = Vector3f((j - cX) / fX * depth, (i - cY) / fY * depth, depth);
+                    mVertices->emplace_back(v);
+                // std::cout << "### " << v[0] << ", "
+                //           << v[1] << ", "
+                //           << v[2] << std::endl;
             }
-            else {
+            else
+            {
                 mVertices->emplace_back(Vector3f(MINF, MINF, MINF));
             }
         }
@@ -188,7 +261,8 @@ const BYTE* Frame::getColorMap() {
     return colorMap;
 }
 
-bool Frame::writeMesh(const std::string& filename, float edgeThreshold) {
+bool Frame::writeMesh(const std::string &filename, float edgeThreshold)
+{
     // Write off file.
     std::ofstream outFile(filename);
     if (!outFile.is_open()) return false;
@@ -198,8 +272,10 @@ bool Frame::writeMesh(const std::string& filename, float edgeThreshold) {
     // Create triangles
     std::vector<Vector3i> mTriangles;
     mTriangles.reserve((depthHeight - 1) * (depthWidth - 1) * 2);
-    for (unsigned int i = 0; i < depthHeight - 1; i++) {
-        for (unsigned int j = 0; j < depthWidth - 1; j++) {
+    for (unsigned int i = 0; i < depthHeight - 1; i++)
+    {
+        for (unsigned int j = 0; j < depthWidth - 1; j++)
+        {
             unsigned int i0 = i * depthWidth + j;
             unsigned int i1 = (i + 1) * depthWidth + j;
             unsigned int i2 = i * depthWidth + j + 1;
@@ -210,17 +286,19 @@ bool Frame::writeMesh(const std::string& filename, float edgeThreshold) {
             bool valid2 = mVerticesGlobal->at(i2).allFinite();
             bool valid3 = mVerticesGlobal->at(i3).allFinite();
 
-            if (valid0 && valid1 && valid2) {
+            if (valid0 && valid1 && valid2)
+            {
                 float d0 = (mVerticesGlobal->at(i0) - mVerticesGlobal->at(i1)).norm();
-                //std::cout << d0 << std::endl;
+                // std::cout << d0 << std::endl;
                 float d1 = (mVerticesGlobal->at(i0) - mVerticesGlobal->at(i2)).norm();
-                //std::cout << d1 << std::endl;
+                // std::cout << d1 << std::endl;
                 float d2 = (mVerticesGlobal->at(i1) - mVerticesGlobal->at(i2)).norm();
-                //std::cout << d2 << std::endl;
+                // std::cout << d2 << std::endl;
                 if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
                     mTriangles.emplace_back(Vector3i(i0, i1, i2));
             }
-            if (valid1 && valid2 && valid3) {
+            if (valid1 && valid2 && valid3)
+            {
                 float d0 = (mVerticesGlobal->at(i3) - mVerticesGlobal->at(i1)).norm();
                 float d1 = (mVerticesGlobal->at(i3) - mVerticesGlobal->at(i2)).norm();
                 float d2 = (mVerticesGlobal->at(i1) - mVerticesGlobal->at(i2)).norm();
@@ -253,7 +331,7 @@ bool Frame::writeMesh(const std::string& filename, float edgeThreshold) {
     // Close file.
     outFile.close();
 
-    std::cout << "Mesh written!" << std::endl;
+    // std::cout << "Mesh written!" << std::endl;
 
     return true;
 }

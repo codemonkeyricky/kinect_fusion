@@ -1,3 +1,6 @@
+
+#include <chrono> 
+
 #include "Volume.h"
 
 #define TRUNCATION 0.06f
@@ -5,18 +8,24 @@
 Volume::Volume() {}
 
 //! Initializes an empty volume dataset.
-Volume::Volume(Vector3f& min_, Vector3f& max_, uint dx_, uint dy_, uint dz_, uint dim)
+Volume::Volume(Vector3f &min_, Vector3f &max_, float voxel_size, uint dim)
 {
 	min = min_;
 	max = max_;
 	diag = max - min;
-	dx = dx_;
-	dy = dy_;
-	dz = dz_;
+
+	dx = (max[0] - min[0]) / voxel_size;
+	dy = (max[1] - min[1]) / voxel_size;
+	dz = (max[2] - min[2]) / voxel_size;
+
 	m_dim = dim;
 	vol = NULL;
 
+	assert(dx == dy);
+	assert(dy == dz);
+
 	vol = new Voxel[dx * dy * dz];
+	tree = new Octree(128);
 
 	zeroOutMemory();
 	compute_ddx_dddx();
@@ -51,11 +60,12 @@ void Volume::compute_ddx_dddx()
 void Volume::zeroOutMemory()
 {
 	for (uint i1 = 0; i1 < dx * dy * dz; i1++)
-		vol[i1] = Voxel(std::numeric_limits<float>::max(), 0.0f, Vector4uc{ 0, 0, 0, 0 });
+		// vol[i1] = Voxel(std::numeric_limits<float>::max(), 0.0f, Vector4uc{0, 0, 0, 0});
+		vol[i1] = Voxel(1.0f, 0.0f, Vector4uc{0, 0, 0, 0});
 }
 
 //! Returns the Data.
-Voxel* Volume::getData()
+Voxel *Volume::getData()
 {
 	return vol;
 };
@@ -96,7 +106,8 @@ void Volume::updateColor(Vector3f point, Vector4uc& color, bool notVisited) {
 }
 
 // estimate the normal for a point in voxel grid coordinates using voxel grid by calculating the numerical derivative of TSDF
-Vector3f Volume::calculateNormal(const Vector3f& point) {
+Vector3f Volume::calculateNormal(const Vector3f &point)
+{
 	//Vector3f shiftedXup, shiftedXdown, shiftedYup, shiftedYdown, shiftedZup, shiftedZdown;
 	Vector3f shiftedXup, shiftedYup, shiftedZup;
 	float x_dir, y_dir, z_dir;
@@ -146,20 +157,30 @@ Vector3f Volume::calculateNormal(const Vector3f& point) {
 	return normal;
 }
 
+float Volume::trilinearInterpolation(const Vector3f &p) const
+{
+	vector4f tmp;
+	for (auto i = 0; i < 3; ++i)
+		tmp[i] = p(i);
+	trilinearInterpolation(tmp);
+}
+
 // trilinear interpolation of a point in voxel grid coordinates to get SDF at the point
-float Volume::trilinearInterpolation(const Vector3f& p) {
-	Vector3i start = intCoords(p);
+float Volume::trilinearInterpolation(const vector4f &p) const
+{
+	Vector3i start = {(int)p[0], (int)p[1], (int)p[2]};
 	float c000, c001, c010, c011, c100, c101, c110, c111;
 
-	c000 = get(start[0] + 0, start[1] + 0, start[2] + 0).getValue();
-	c100 = get(start[0] + 1, start[1] + 0, start[2] + 0).getValue();
-	c001 = get(start[0] + 0, start[1] + 0, start[2] + 1).getValue();
-	c101 = get(start[0] + 1, start[1] + 0, start[2] + 1).getValue();
-	c010 = get(start[0] + 0, start[1] + 1, start[2] + 0).getValue();
-	c110 = get(start[0] + 1, start[1] + 1, start[2] + 0).getValue();
-	c011 = get(start[0] + 0, start[1] + 1, start[2] + 1).getValue();
-	c111 = get(start[0] + 1, start[1] + 1, start[2] + 1).getValue();
+	c000 = get(start[0] + 0, start[1] + 0, start[2] + 0).getTSDF();
+	c100 = get(start[0] + 1, start[1] + 0, start[2] + 0).getTSDF();
+	c001 = get(start[0] + 0, start[1] + 0, start[2] + 1).getTSDF();
+	c101 = get(start[0] + 1, start[1] + 0, start[2] + 1).getTSDF();
+	c010 = get(start[0] + 0, start[1] + 1, start[2] + 0).getTSDF();
+	c110 = get(start[0] + 1, start[1] + 1, start[2] + 0).getTSDF();
+	c011 = get(start[0] + 0, start[1] + 1, start[2] + 1).getTSDF();
+	c111 = get(start[0] + 1, start[1] + 1, start[2] + 1).getTSDF();
 
+#if 0
 	if (
 		c000 == std::numeric_limits<float>::max() || 
 		c001 == std::numeric_limits<float>::max() || 
@@ -171,6 +192,7 @@ float Volume::trilinearInterpolation(const Vector3f& p) {
 		c111 == std::numeric_limits<float>::max()
 	)
 		return std::numeric_limits<float>::max();
+#endif
 
 	float xd, yd, zd;
 
@@ -198,113 +220,105 @@ float Volume::trilinearInterpolation(const Vector3f& p) {
 }
 
 // using given frame calculate TSDF values for all voxels in the grid
-void Volume::integrate(Frame frame) {
+// __attribute__((optimize("O0")))
+void Volume::integrate(Frame frame)
+{
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
 	const Matrix4f cameraToWorld = worldToCamera.inverse();
 	const Matrix3f intrinsic = frame.getIntrinsicMatrix();
 	Vector3f translation = cameraToWorld.block(0, 3, 3, 1);
-	const float* depthMap = frame.getDepthMap();
-	const BYTE* colorMap = frame.getColorMap();
+	const float *depthMap = frame.getDepthMap();
+	const BYTE *colorMap = frame.getColorMap();
 	int width = frame.getFrameWidth();
 	int height = frame.getFrameHeight();
 
-	//std::cout << intrinsic << std::endl;
+	// std::cout << intrinsic << std::endl;
+					int cnt = 0, cnt2 = 0;
+
 
 	// subscripts: g - global coordinate system | c - camera coordinate system | i - image space
-	// short notations: V - vector | P - point | sdf - signed distance field value | tsdf - truncated sdf 
+	// short notations: V - vector | P - point | sdf - signed distance field value | tsdf - truncated sdf
 	Vector3f Pg, Pc, ray, normal;
 	Vector2i Pi;
 	Vector4uc color;
-	float depth, lambda, sdf, tsdf, tsdf_weight, value, weight, cos_angle;
+	float depth, lambda, sdf, tsdf_weight, tsdf, weight, cos_angle;
 	uint index;
 
-	std::cout << "Integrate starting..." << std::endl;
+	// std::cout << "Integrate starting..." << std::endl;
 
-	for (int k = 0; k < dz; k++) {
-		for (int j = 0; j < dy; j++) {
-			for (int i = 0; i < dx; i++) {
-
+	for (int k = 0; k < dz; k++)
+	{
+		for (int j = 0; j < dy; j++)
+		{
+			for (int i = 0; i < dx; i++)
+			{
 				// project the grid point into image space
 				Pg = gridToWorld(i, j, k);
 				Pc = frame.projectPointIntoFrame(Pg);
 				Pi = frame.projectOntoImgPlane(Pc);
 
-				//std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
+				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
 
-				//Pg = gridToWorld(i, j, k);
-				//Pc = Frame::transformPoint(Pg, worldToCamera);
-				//Pi = Frame::perspectiveProjection(Pc, intrinsic);
+				// Pg = gridToWorld(i, j, k);
+				// Pc = Frame::transformPoint(Pg, worldToCamera);
+				// Pi = Frame::perspectiveProjection(Pc, intrinsic);
 
-				//std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
+				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
 
-				if (frame.containsImgPoint(Pi)) {
-
+				if (frame.containsImgPoint(Pi))
+				{
 					// get the depth of the point
 					index = Pi[1] * width + Pi[0];
 					depth = depthMap[index];
 
-					if (depth == MINF)
-						continue;
-
-					//std::cout << "Odbok!!\n";
-
 					// calculate the sdf value
 					lambda = (Pc / Pc[2]).norm();
-
 					sdf = depth - ((Pg - translation) / lambda).norm();
 
-					// compute the weight as the angle between the ray from the voxel point and normal of the associated frame point devided by depth
-					ray = (Pg - translation).normalized();
-					normal = frame.getNormalGlobal(index);
-			
-					cos_angle = - ray.dot(normal) / ray.norm() / normal.norm();
-
-					tsdf_weight = 1; //-cos_angle / depth; // 1; // 1 / depth;
-
 					// get the previous value and weight
-					value = vol[getPosFromTuple(i, j, k)].getValue();
+					tsdf = vol[getPosFromTuple(i, j, k)].getTSDF();
 					weight = vol[getPosFromTuple(i, j, k)].getWeight();
 					color = vol[getPosFromTuple(i, j, k)].getColor();
 
-					// if we are doing the integration for the first time
-					if (value == std::numeric_limits<float>::max()) {
-						value = 0;
-						weight = 0;
-						color = Vector4uc{ 0, 0, 0, 0 };
-					}
+					if (sdf >= -TRUNCATION && depth != MINF)
+					{
+						float current_tsdf = std::min(1.0f, sdf / TRUNCATION);
+						float current_weight = 1.0f;
+						float old_tsdf = vol[getPosFromTuple(i, j, k)].getTSDF();
+						float old_weight = vol[getPosFromTuple(i, j, k)].getWeight();
 
-					// truncation of the sdf
-					if (sdf > 0) {
-						tsdf = std::min(1.0f, sdf / TRUNCATION);
-					}
-					else {
-						tsdf = std::max(-1.0f, sdf / TRUNCATION);
-					}
+						auto updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
+						auto updated_weight = old_weight + current_weight;
 
-					// the new value and weight is the running average
-					vol[getPosFromTuple(i, j, k)].setValue((value * weight + tsdf * tsdf_weight) / (weight + tsdf_weight));
-					vol[getPosFromTuple(i, j, k)].setWeight(weight + tsdf_weight);
+						if ((old_tsdf > 0. && updated_tsdf <= 0.) ||
+							(old_tsdf <= 0. && updated_tsdf > 0.))
+							tree->update(i, j, k, updated_tsdf <= 0 ? 0 : 1), ++cnt2;
 
-					if (sdf <= TRUNCATION / 2 && sdf>= - TRUNCATION / 2) {
-						vol[getPosFromTuple(i, j, k)].setColor(
-							Vector4uc{
-								(const unsigned char)((color[0] * weight + colorMap[4 * index + 0] * tsdf_weight) / (weight + tsdf_weight)),
-								(const unsigned char)((color[1] * weight + colorMap[4 * index + 1] * tsdf_weight) / (weight + tsdf_weight)),
-								(const unsigned char)((color[2] * weight + colorMap[4 * index + 2] * tsdf_weight) / (weight + tsdf_weight)),
-								(const unsigned char)((color[3] * weight + colorMap[4 * index + 3] * tsdf_weight) / (weight + tsdf_weight))
-							}
-						);
+						vol[getPosFromTuple(i, j, k)].setTSDF(updated_tsdf);
+
+						vol[getPosFromTuple(i, j, k)].setWeight(updated_weight);
+
+						if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
+						{
+							vol[getPosFromTuple(i, j, k)].setColor(
+								Vector4uc{(const unsigned char)((color[0] * old_weight + colorMap[4 * index + 0] * current_weight) / (old_weight + current_weight)),
+										  (const unsigned char)((color[1] * old_weight + colorMap[4 * index + 1] * current_weight) / (old_weight + current_weight)),
+										  (const unsigned char)((color[2] * old_weight + colorMap[4 * index + 2] * current_weight) / (old_weight + current_weight)),
+										  (const unsigned char)((color[3] * old_weight + colorMap[4 * index + 3] * current_weight) / (old_weight + current_weight))});
+						}
+						++cnt;
 					}
-					
-					//std::cout << vol[getPosFromTuple(i, j, k)].getValue() << std::endl;
 				}
-
 			}
 		}
 	}
 
-	std::cout << "Integrate done!" << std::endl;
+	// auto start = std::chrono::high_resolution_clock::now();
+	// tree->build((Octree::Vox *)vol, 128);
+	// auto stop = std::chrono::high_resolution_clock::now();
+	// auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+	// std::cout << "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
+	// assert(0);
 
-
+	// std::cout << "Integrate done!" << std::endl;
 }
-

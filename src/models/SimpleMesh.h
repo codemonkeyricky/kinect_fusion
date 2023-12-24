@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "Eigen.h"
+#include "VirtualSensor.h"
 
 struct Vertex {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -228,10 +229,13 @@ public:
 		return true;
 	}
 
-	bool writeMesh(const std::string& filename) {
+	// __attribute__((optimize("O0")))
+	bool writeMesh(const std::string &filename)
+	{
 		// Write off file.
 		std::ofstream outFile(filename);
-		if (!outFile.is_open()) return false;
+		if (!outFile.is_open())
+			return false;
 
 		std::cout << "Writing mesh: '" << filename << "'!" << std::endl;
 
@@ -240,17 +244,19 @@ public:
 		outFile << m_vertices.size() << " " << m_triangles.size() << " 0" << std::endl;
 
 		// Save vertices.
-		for (unsigned int i = 0; i < m_vertices.size(); i++) {
-			const auto& vertex = m_vertices[i];
+		for (unsigned int i = 0; i < m_vertices.size(); i++)
+		{
+			const auto &vertex = m_vertices[i];
 			if (vertex.position.allFinite())
 				outFile << vertex.position.x() << " " << vertex.position.y() << " " << vertex.position.z() << " "
-				<< int(vertex.color.x()) << " " << int(vertex.color.y()) << " " << int(vertex.color.z()) << " " << int(vertex.color.w()) << std::endl;
+						<< int(vertex.color.x()) << " " << int(vertex.color.y()) << " " << int(vertex.color.z()) << " " << int(vertex.color.w()) << std::endl;
 			else
 				outFile << "0.0 0.0 0.0 0 0 0 0" << std::endl;
 		}
 
 		// Save faces.
-		for (unsigned int i = 0; i < m_triangles.size(); i++) {
+		for (unsigned int i = 0; i < m_triangles.size(); i++)
+		{
 			outFile << "3 " << m_triangles[i].idx0 << " " << m_triangles[i].idx1 << " " << m_triangles[i].idx2 << std::endl;
 		}
 

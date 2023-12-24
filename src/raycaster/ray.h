@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef RAY_H
-#define RAY_H
-
 #include "Eigen.h"
 
 class Ray {
@@ -27,5 +24,3 @@ public:
 	Vector3f& getCurrentPosition();
 	Vector3f& getPreviousPosition();
 };
-
-#endif //RAY_H

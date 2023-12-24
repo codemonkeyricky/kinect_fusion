@@ -4,10 +4,12 @@
 #define VOLUME_H
 
 #include <limits>
-#include "Eigen.h"
-#include "Frame.h"
 #include <unordered_map>
 #include <vector>
+
+#include "Eigen.h"
+#include "Frame.h"
+#include "src/helpers/octree.hpp"
 
 typedef unsigned int uint;
 
@@ -23,29 +25,35 @@ private:
 public:
 	Voxel() {}
 
-	Voxel(float value_, float weight_, Vector4uc color_) : value{ value_ }, weight{ weight_ }, color{ color_ } {}
+	Voxel(float value_, float weight_, Vector4uc color_) : value{value_}, weight{weight_}, color{color_} {}
 
-	float getValue() {
+	float getTSDF() const
+	{
 		return value;
 	}
 
-	float getWeight() {
+	float getWeight()
+	{
 		return weight;
 	}
 
-	Vector4uc getColor() {
+	Vector4uc getColor()
+	{
 		return color;
 	}
 
-	void setValue(float v) {
+	void setTSDF(float v)
+	{
 		value = v;
 	}
 
-	void setWeight(float w) {
+	void setWeight(float w)
+	{
 		weight = w;
 	}
 
-	void setColor(Vector4uc c) {
+	void setColor(Vector4uc c)
+	{
 		color = c;
 	}
 };
@@ -88,14 +96,15 @@ private:
 
 	uint m_dim;
 
+	Octree *tree;
+
 	//map that tracks raycasted voxels
 	std::unordered_map<Vector3i, bool, matrix_hash<Vector3i>> visitedVoxels;
 
 public:
-	
 	Volume();
 	//! Initializes an empty volume dataset.
-	Volume(Vector3f& min_, Vector3f& max_, uint dx_ = 10, uint dy_ = 10, uint dz_ = 10, uint dim = 1);
+	Volume(Vector3f &min_, Vector3f &max_, float voxel_size = 0.025f, uint dim = 1);
 
 	~Volume();
 
@@ -124,8 +133,9 @@ public:
 	Vector3f calculateNormal(const Vector3f& point);
 
 	// trilinear interpolation of a point in voxel grid coordinates to get SDF at the point
-	float trilinearInterpolation(const Vector3f& p);
-		
+	float trilinearInterpolation(const Vector3f &p) const;
+	float trilinearInterpolation(const vector4f &p) const;
+
 	// using given frame calculate TSDF values for all voxels in the grid
 	void integrate(Frame frame);
 
@@ -162,6 +172,11 @@ public:
 		return(get(pos_[0], pos_[1], pos_[2]));
 	}
 
+	inline Voxel &get(const vector4f &pos_) const
+	{
+		return (get((int)pos_[0], (int)pos_[1], (int)pos_[2]));
+	}
+
 	//! Returns the cartesian coordinates of node (i,j,k).
 	inline Vector3f gridToWorld(int i, int j, int k) const
 	{
@@ -178,6 +193,17 @@ public:
 	inline Vector3f gridToWorld(Vector3f& p) const
 	{
 		Vector3f coord(0.0f, 0.0f, 0.0f);
+
+		coord[0] = min[0] + (max[0] - min[0]) * (p[0] * ddx);
+		coord[1] = min[1] + (max[1] - min[1]) * (p[1] * ddy);
+		coord[2] = min[2] + (max[2] - min[2]) * (p[2] * ddz);
+
+		return coord;
+	}
+
+	inline vector4f gridToWorld(vector4f &p) const
+	{
+		vector4f coord;
 
 		coord[0] = min[0] + (max[0] - min[0]) * (p[0] * ddx);
 		coord[1] = min[1] + (max[1] - min[1]) * (p[1] * ddy);
@@ -223,15 +249,20 @@ public:
 	//! Checks if a voxel at point p in grid coords was raycasted
 	bool voxelVisited(Vector3f& p) {
 		Vector3i pi = Volume::intCoords(p);
-
 		return voxelVisited(pi[0], pi[1], pi[2]);
 	}
 
+	bool voxelVisited(vector4f &p)
+	{
+		return voxelVisited((int)p[0], (int)p[1], (int)p[2]);
+	}
+
 	//! Adds voxel to visited voxels
-	void setVisited(Vector3i& voxCoords) {
+	void setVisited(vector4f &voxCoords)
+	{
 		std::vector<Vector3i> starting_points;
-		Vector3i p_int = voxCoords;
-		
+		Vector3i p_int = {voxCoords[0], voxCoords[1], voxCoords[2]};
+
 		starting_points.emplace_back(Vector3i{ p_int[0] + 0, p_int[1] + 0, p_int[2] + 0 });
 		starting_points.emplace_back(Vector3i{ p_int[0] - 1, p_int[1] + 0, p_int[2] + 0 });
 		starting_points.emplace_back(Vector3i{ p_int[0] + 0, p_int[1] - 1, p_int[2] + 0 });
@@ -277,29 +308,49 @@ public:
 	void updateColor(Vector3f point, Vector4uc& color, bool notVisited);
 
 	//! Checks if the point in grid coordinates is in the volume
-	bool isPointInVolume(Vector3f& point) {
-		return
-			!(
-				point[0] > dx - 1 ||
-				point[1] > dy - 1 ||
-				point[2] > dz - 1 ||
-				point[0] < 0 ||
-				point[1] < 0 ||
-				point[2] < 0
-				);
+	bool isPointInVolume(Vector3f &point)
+	{
+		return !(
+			point[0] > dx - 1 ||
+			point[1] > dy - 1 ||
+			point[2] > dz - 1 ||
+			point[0] < 0 ||
+			point[1] < 0 ||
+			point[2] < 0);
+	}
+
+	bool isPointInVolume(vector4f &point)
+	{
+		return !(
+			point[0] > dx - 1 ||
+			point[1] > dy - 1 ||
+			point[2] > dz - 1 ||
+			point[0] < 0 ||
+			point[1] < 0 ||
+			point[2] < 0);
 	}
 
 	//! Checks if the trilinear interpolation possible for a given point (we have to have 8 surrounding points)
-	bool isInterpolationPossible(Vector3f& point) {
-		return
-			!(
-				point[0] > dx - 3 ||
-				point[1] > dy - 3 ||
-				point[2] > dz - 3 ||
-				point[0] < 2 ||
-				point[1] < 2 ||
-				point[2] < 2
-				);
+	bool isInterpolationPossible(Vector3f &point)
+	{
+		return !(
+			point[0] > dx - 3 ||
+			point[1] > dy - 3 ||
+			point[2] > dz - 3 ||
+			point[0] < 2 ||
+			point[1] < 2 ||
+			point[2] < 2);
+	}
+
+	bool isInterpolationPossible(vector4f &point)
+	{
+		return !(
+			point[0] > dx - 3 ||
+			point[1] > dy - 3 ||
+			point[2] > dz - 3 ||
+			point[0] < 2 ||
+			point[1] < 2 ||
+			point[2] < 2);
 	}
 
 private:
