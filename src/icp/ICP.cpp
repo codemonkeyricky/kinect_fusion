@@ -2,6 +2,7 @@
 // Author: Vladimir
 #include "ICP.h"
 
+#include <chrono>
 #include <iostream>
 #include <memory>
 #include <utility>
@@ -81,11 +82,11 @@ std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
   Eigen::Matrix4f estimatedPose = estPose;
   std::vector<std::pair<size_t, size_t>> indicesOfCorrespondingPoints;
 
-  std::vector<Eigen::Vector3f> prevFrameVertexMapGlobal = prevFrame.getVertexMapGlobal();
-  std::vector<Eigen::Vector3f> prevFrameNormalMapGlobal = prevFrame.getNormalMapGlobal();
+  const std::vector<Eigen::Vector3f> &prevFrameVertexMapGlobal = prevFrame.getVertexMapGlobal();
+  const std::vector<Eigen::Vector3f> &prevFrameNormalMapGlobal = prevFrame.getNormalMapGlobal();
 
-  std::vector<Eigen::Vector3f> curFrameVertexMapGlobal = curFrame.getVertexMapGlobal();
-  std::vector<Eigen::Vector3f> curFrameNormalMapGlobal = curFrame.getNormalMapGlobal();
+  const std::vector<Eigen::Vector3f> &curFrameVertexMapGlobal = curFrame.getVertexMapGlobal();
+  const std::vector<Eigen::Vector3f> &curFrameNormalMapGlobal = curFrame.getNormalMapGlobal();
 
   const auto rotation = estimatedPose.block(0, 0, 3, 3);
   const auto translation = estimatedPose.block(0, 3, 3, 1);
@@ -94,6 +95,8 @@ std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
 
   const auto rotationInv = estimatedPoseInv.block(0, 0, 3, 3);
   const auto translationInv = estimatedPoseInv.block(0, 3, 3, 1);
+
+  auto start = std::chrono::high_resolution_clock::now();
 
   // GPU implementation: use a separate thread for every run of the for
   // loop
@@ -107,7 +110,6 @@ std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
     {
       Eigen::Vector3f prevPointCurCamera = rotationInv * prevVertex + translationInv;
       Eigen::Vector3f prevNormalCurCamera = rotationInv * prevFrameNormalMapGlobal[idx];
-
       // project point from global camera system into camera system of
       // the current frame
       const Eigen::Vector3f prevPointCurFrame = curFrame.projectPointIntoFrame(prevPointCurCamera);
@@ -134,5 +136,10 @@ std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
       }
     }
   }
+
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+  std::cout << "### ICP duration: " << duration.count() << std::endl;
+
   return indicesOfCorrespondingPoints;
 }

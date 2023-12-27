@@ -1,0 +1,34 @@
+
+cc_binary(
+    name = "kinect_fusion", 
+    includes = [
+        "src/icp",
+        "src/helpers",
+        "src/models",
+        "libgens/eigen", 
+        "src/raycaster",
+    ],
+    srcs = [
+        "src/main.cpp",
+        "src/models/Frame.h",
+        "src/models/Frame.cpp",
+        "src/models/MarchingCubes.h",
+        "src/models/SimpleMesh.h",
+        "src/models/Volume.h",
+        "src/models/Volume.cpp",
+        "src/raycaster/Ray.h",
+        "src/raycaster/Ray.cpp",
+        "src/raycaster/RayCaster.h",
+        "src/raycaster/RayCaster.cpp",
+        "src/icp/ICP.h", 
+        "src/icp/ICP.cpp",
+        "src/helpers/Eigen.h",
+        "src/helpers/VirtualSensor.h",
+        "src/helpers/FreeImageHelper.h",
+        "src/helpers/FreeImageHelper.cpp",
+        ],
+    deps = [
+        "@eigen"
+    ],
+    linkopts = [ "-lfreeimage" ],
+)

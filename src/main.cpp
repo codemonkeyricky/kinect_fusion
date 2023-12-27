@@ -28,14 +28,14 @@
 
 int main() {
   // Make sure this path points to the data folder
-    std::string filenameIn = "../data/rgbd_dataset_freiburg1_xyz/";
+    // std::string filenameIn = "data/rgbd_dataset_freiburg1_xyz/";
     // std::string filenameIn = "../data/rgbd_dataset_freiburg2_xyz/";
     // std::string filenameIn = "../data/rgbd_dataset_freiburg1_desk/";
-    // std::string filenameIn = "../data/rgbd_dataset_freiburg1_desk2/";
-    // std::string filenameIn = "../data/rgbd_dataset_freiburg1_floor/";
-    // std::string filenameIn = "../data/rgbd_dataset_freiburg1_rpy/";
-    std::string filenameBaseOut = std::string("../output/mesh_");
-    std::string filenameBaseOutMC = std::string("../output/MCmesh_");
+    // std::string filenameIn = "data/rgbd_dataset_freiburg1_desk2/";
+    // std::string filenameIn = "data/rgbd_dataset_freiburg1_floor/";
+    std::string filenameIn = "data/rgbd_dataset_freiburg1_rpy/";
+    std::string filenameBaseOut = std::string("output/mesh_");
+    std::string filenameBaseOutMC = std::string("output/MCmesh_");
 
   // load video
   std::cout << "Initialize virtual sensor..." << std::endl;
