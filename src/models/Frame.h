@@ -11,6 +11,8 @@
 #include "VirtualSensor.h"
 #include <memory>
 
+typedef std::array<float, 4> vector4f;
+
 class Frame {
     friend class RayCaster;
 
@@ -62,6 +64,11 @@ private:
         const std::vector<Eigen::Vector3f>& points,
         const Eigen::Matrix4f& transformation);
 
+    std::vector<vector4f> transformPoints(
+        const std::vector<Eigen::Vector3f> &points,
+        const Eigen::Matrix4f &transformation,
+        bool dummy);
+
     std::vector<Eigen::Vector3f> rotatePoints(
         const std::vector<Eigen::Vector3f>& points,
         const Eigen::Matrix3f& rotation);
@@ -73,6 +80,7 @@ private:
     std::shared_ptr<std::vector<Eigen::Vector3f>> mVertices;
     std::shared_ptr<std::vector<Eigen::Vector3f>> mNormals;
     std::shared_ptr<std::vector<Eigen::Vector3f>> mVerticesGlobal;
+    std::shared_ptr<std::vector<vector4f>> mVerticesGlobal_vector4f;
     std::shared_ptr<std::vector<Eigen::Vector3f>> mNormalsGlobal;
     Eigen::Matrix4f extrinsicMatrix;
     Eigen::Matrix3f intrinsicMatrix;
