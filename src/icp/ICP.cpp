@@ -54,8 +54,15 @@ Matrix4f ICP::estimatePose(
                    n(1) * x(1) - n(2) * x(2);
         }
 
+
+        auto start = std::chrono::high_resolution_clock::now();
+
         VectorXf x(6);
         x = A.bdcSvd(ComputeThinU | ComputeThinV).solve(b);
+
+        auto stop = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+        std::cout << "### pose esitmation : " << duration.count() << " us" << std::endl;
 
         const float alpha = x(0), beta = x(1), gamma = x(2);
         Matrix3f rotation =
@@ -68,8 +75,8 @@ Matrix4f ICP::estimatePose(
         curentPose.block<3, 3>(0, 0) = rotation;
         curentPose.block<3, 1>(0, 3) = translation;
         estimatedPose = curentPose * estimatedPose;
-  }
-  return estimatedPose;
+    }
+    return estimatedPose;
 }
 
 // void transform_scalar(vector4f *__restrict rv,

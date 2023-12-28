@@ -10,20 +10,20 @@
 typedef std::array<float, 4> vector4f;
 typedef std::array<float, 16> matrix4f;
 
-std::array<float, 16> getRotation(
+matrix4f getRotation(
     const Eigen::Matrix4f &mat)
 {
-    std::array<float, 16> r;
+    matrix4f r;
     for (auto i = 0; i < 3; ++i)
         for (auto j = 0; j < 3; ++j)
             r[i * 4 + j] = mat(i, j);
     return r;
 }
 
-std::array<float, 4> getTranslation(
+vector4f getTranslation(
     const Eigen::Matrix4f &mat)
 {
-    std::array<float, 4> t;
+    vector4f t;
     t[0] = mat(0, 3);
     t[1] = mat(1, 3);
     t[2] = mat(2, 3);
@@ -31,10 +31,10 @@ std::array<float, 4> getTranslation(
     return t;
 }
 
-std::array<float, 4> convertToArray(
+vector4f convertToArray(
     const Eigen::Vector3f &v)
 {
-    std::array<float, 4> rv;
+    vector4f rv;
     rv[0] = v[0];
     rv[1] = v[1];
     rv[2] = v[2];
@@ -42,22 +42,22 @@ std::array<float, 4> convertToArray(
     return rv;
 }
 
-std::array<float, 16> convertToArray(
+matrix4f convertToArray(
     const Eigen::Matrix3f &m)
 {
-    std::array<float, 16> rv = {};
+    matrix4f rv = {};
     for (auto i = 0; i < 3; ++i)
         for (auto j = 0; j < 3; ++j)
             rv[i * 4 + j] = m(i, j);
     return rv;
 }
 
-std::array<float, 4> rotate_translate(
-    const std::array<float, 4> &v,
-    const std::array<float, 16> &r,
-    const std::array<float, 4> &t)
+inline vector4f rotate_translate(
+    const vector4f &v,
+    const matrix4f &r,
+    const vector4f &t)
 {
-    std::array<float, 4> rv = {};
+    vector4f rv = {};
     for (int i = 0; i < 4; ++i)
     {
         for (int j = 0; j < 4; ++j)
@@ -96,14 +96,20 @@ void ICP::findIndicesOfCorrespondingPoints2(
 
     for (size_t k = 0; k < prevVertex.size(); k++)
     {
+        // Transform to global coordinate 
         auto curr_camera = rotate_translate(prevVertex[k], r, t);
+
+        // Project to current camera frame
         auto curr_frame = rotate_translate(curr_camera, ex_r, ex_t);
+
+        // Project to image plane
+
         output[k] = curr_frame;
     }
 
     auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    std::cout << "### ICP2 duration: " << duration.count() << std::endl;
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
+    std::cout << "### ICP2 duration: " << duration.count() << " ns" << std::endl;
 
     #if 0
     std::vector<std::pair<size_t, size_t>> indicesOfCorrespondingPoints;
@@ -132,35 +138,8 @@ void ICP::findIndicesOfCorrespondingPoints2(
         // std::cout << "Curent Point (Camera): " << curPoint[0] << " " <<
         // curPoint[1] << " " << curPoint[2] << std::endl;
 
-#if 1
-        auto v = convertToArray(prevVertex);
-        auto r = getRotation(estimatedPoseInv);
-        auto t = getTranslation(estimatedPoseInv);
-        auto curr_camera = rotate_translate(v, r, t);
-
-        auto extrinsics = curFrame.getExtrinsicMatrix();
-        auto ex_r = getRotation(extrinsics);
-        auto ex_t = getTranslation(extrinsics);
-        auto curr_frame = rotate_translate(curr_camera, ex_r, ex_t);
-
-        auto intrinsics = convertToArray(curFrame.getIntrinsicMatrix());
-
-        // asm("#bullshit");
-        // volatile auto rv2 = r * v + t;
-        // asm("#bullshit");
-
-        // https://stackoverflow.com/questions/30674291/how-to-check-inf-for-avx-intrinsic-m256
-        // __m256 self_sub_v8 = _mm128_sub_ps(float_v8, float_v8);
-        // return _mm256_movemask_epi8(_mm256_castps_si256(self_sub_v8));
-
-#endif
-
         if (prevVertex.allFinite() && prevNormal.allFinite())
         {
-
-#if 1
-#endif
-
             Eigen::Vector3f prevPointCurCamera = rotationInv * prevVertex + translationInv;
             // project point from global camera system into camera system of
             // the current frame
