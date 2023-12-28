@@ -77,7 +77,7 @@ void Frame::setExtrinsicMatrix(const Eigen::Matrix4f& extMatrix) {
     mVerticesGlobal = std::make_shared<std::vector<Eigen::Vector3f>>(transformPoints(*mVertices, extrinsicMatrixInv));
     mNormalsGlobal = std::make_shared<std::vector<Eigen::Vector3f>>(rotatePoints(*mNormals, rotation));
 
-    // mVerticesGlobal_vector4f = std::make_shared<std::vector<vector4f>(transformPoints(*mVertices, extrinsicMatrixInv, 0));
+    mVerticesGlobal_vector4f = std::make_shared<std::vector<vector4f>>(transformPoints(*mVertices, extrinsicMatrixInv, 0));
 }
 
 Eigen::Vector2i Frame::projectOntoImgPlane(const Eigen::Vector3f& point) {
@@ -101,8 +101,8 @@ std::vector<vector4f> Frame::transformPoints(
     for (size_t idx = 0; idx < points.size(); ++idx) {
         if (points[idx].allFinite())
         {
-            auto rv  = rotation * points[idx] + translation;
-            for (auto i = 0; i < 4; ++i)
+            auto rv = rotation * points[idx] + translation;
+            for (auto i = 0; i < 3; ++i)
                 transformed[idx][i] = rv[i];
         }
         else
