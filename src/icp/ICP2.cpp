@@ -7,86 +7,10 @@
 #include <memory>
 #include <utility>
 
-ICP::ICP(Frame &_prevFrame, Frame &_curFrame, const double distanceThreshold,
-         const double normalThreshold)
-    : prevFrame(_prevFrame),
-      curFrame(_curFrame),
-      distanceThreshold(distanceThreshold),
-      normalThreshold(normalThreshold) {}
-
-Matrix4f ICP::estimatePose(
-    Eigen::Matrix4f& estimatedPose,
-    int iterationsNum
-) {
-
-  for (size_t iteration = 0; iteration < iterationsNum; iteration++) {
-    const std::vector<std::pair<size_t, size_t>> correspondenceIds = findIndicesOfCorrespondingPoints(estimatedPose);
-
-    std::cout << "# corresponding points: " << correspondenceIds.size()
-        << std::endl;
-    std::cout << "# total number of points: "
-        << curFrame.getVertexMap().size() << std::endl;
-
-    int nPoints = correspondenceIds.size();
-    Eigen::Matrix3f rotationEP = estimatedPose.block(0, 0, 3, 3);
-    Eigen::Vector3f translationEP = estimatedPose.block(0, 3, 3, 1);
-
-    MatrixXf A = MatrixXf::Zero(nPoints, 6);
-    VectorXf b = VectorXf::Zero(nPoints);
-
-    for (size_t i = 0; i < nPoints; i++) {
-      auto pair = correspondenceIds[i];
-      const auto &x = rotationEP * curFrame.getVertexGlobal(pair.second) + translationEP;
-      const auto &y = prevFrame.getVertexGlobal(pair.first);
-      const auto &n = prevFrame.getNormalGlobal(pair.first);
-
-      A(i, 0) = n(2) * x(1) - n(1) * x(2);
-      A(i, 1) = n(0) * x(2) - n(2) * x(0);
-      A(i, 2) = n(1) * x(0) - n(0) * x(1);
-      A(i, 3) = n(0);
-      A(i, 4) = n(1);
-      A(i, 5) = n(2);
-      b(i) = n(0) * y(0) + n(1) * y(1) + n(2) * y(2) - n(0) * x(0) -
-             n(1) * x(1) - n(2) * x(2);
-    }
-
-    VectorXf x(6);
-    x = A.bdcSvd(ComputeThinU | ComputeThinV).solve(b);
-
-    const float alpha = x(0), beta = x(1), gamma = x(2);
-    Matrix3f rotation =
-        AngleAxisf(alpha, Vector3f::UnitX()).toRotationMatrix() *
-        AngleAxisf(beta, Vector3f::UnitY()).toRotationMatrix() *
-        AngleAxisf(gamma, Vector3f::UnitZ()).toRotationMatrix();
-    Vector3f translation = x.tail(3);
-
-    Matrix4f curentPose = Matrix4f::Identity();
-    curentPose.block<3, 3>(0, 0) = rotation;
-    curentPose.block<3, 1>(0, 3) = translation;
-    estimatedPose = curentPose * estimatedPose;
-  }
-  return estimatedPose;
-}
-
-// void transform_scalar(vector4f *__restrict rv,
-//                  const matrix4f *__restrict rotation,
-//                  const vector4f *__restrict translation,
-//                  const vector4f *__restrict pixel,
-//                  const int len)
-// {
-//   for (int k = 0; k < len; ++k)
-//     for (int i = 0; i < 4; ++i)
-//     {
-//       for (int j = 0; j < 4; ++j)
-//         rv[k][i] *= (*rotation)[i * 4 + j] * pixel[k][j];
-//       rv[k][i] += (*translation)[i];
-//     }
-// }
-
 typedef std::array<float, 4> vector4f;
 typedef std::array<float, 16> matrix4f;
 
-static std::array<float, 16> getRotation(
+std::array<float, 16> getRotation(
     const Eigen::Matrix4f &mat)
 {
     std::array<float, 16> r;
@@ -96,7 +20,7 @@ static std::array<float, 16> getRotation(
     return r;
 }
 
-static std::array<float, 4> getTranslation(
+std::array<float, 4> getTranslation(
     const Eigen::Matrix4f &mat)
 {
     std::array<float, 4> t;
@@ -107,7 +31,7 @@ static std::array<float, 4> getTranslation(
     return t;
 }
 
-static std::array<float, 4> convertToArray(
+std::array<float, 4> convertToArray(
     const Eigen::Vector3f &v)
 {
     std::array<float, 4> rv;
@@ -118,7 +42,7 @@ static std::array<float, 4> convertToArray(
     return rv;
 }
 
-static std::array<float, 16> convertToArray(
+std::array<float, 16> convertToArray(
     const Eigen::Matrix3f &m)
 {
     std::array<float, 16> rv = {};
@@ -128,7 +52,7 @@ static std::array<float, 16> convertToArray(
     return rv;
 }
 
-static std::array<float, 4> rotate_translate(
+std::array<float, 4> rotate_translate(
     std::array<float, 4> &v,
     std::array<float, 16> &r,
     std::array<float, 4> &t)
@@ -151,9 +75,11 @@ static std::array<float, 4> rotate_translate(
 // previous frame Simple version: only take euclidean distance between
 // points into consideration without normals Advanced version: Euclidean
 // distance between points + difference in normal angles
-__attribute__((optimize("O0"))) std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
+// __attribute__((optimize("O0")))
+void ICP::findIndicesOfCorrespondingPoints2(
     const Eigen::Matrix4f &estPose)
 {
+    #if 0
     Eigen::Matrix4f estimatedPose = estPose;
     std::vector<std::pair<size_t, size_t>> indicesOfCorrespondingPoints;
 
@@ -242,4 +168,5 @@ __attribute__((optimize("O0"))) std::vector<std::pair<size_t, size_t>> ICP::find
     std::cout << "### ICP duration: " << duration.count() << std::endl;
 
     return indicesOfCorrespondingPoints;
+    #endif
 }

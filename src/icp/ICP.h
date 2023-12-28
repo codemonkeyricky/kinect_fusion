@@ -24,7 +24,10 @@ class ICP {
   std::vector<std::pair<size_t, size_t>> findIndicesOfCorrespondingPoints(
       const Eigen::Matrix4f &estimatedPose);
 
- private:
+  void findIndicesOfCorrespondingPoints2(
+      const Eigen::Matrix4f &estimatedPose);
+
+  private:
   Frame &prevFrame;
   Frame &curFrame;
   const double distanceThreshold;

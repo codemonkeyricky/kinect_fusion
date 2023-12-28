@@ -22,6 +22,7 @@ cc_binary(
         "src/raycaster/RayCaster.cpp",
         "src/icp/ICP.h", 
         "src/icp/ICP.cpp",
+        "src/icp/ICP2.cpp",
         "src/helpers/Eigen.h",
         "src/helpers/VirtualSensor.h",
         "src/helpers/FreeImageHelper.h",
