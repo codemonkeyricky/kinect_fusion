@@ -28,7 +28,8 @@ public:
     Eigen::Vector3f getVertex(size_t idx) const;
     Eigen::Vector3f getNormal(size_t idx) const;
     int getVertexCount() const;
-    std::vector<Eigen::Vector3f>& getVertexMapGlobal();
+    std::vector<Eigen::Vector3f> &getVertexMapGlobal();
+    std::vector<vector4f> &getVertexMapGlobal_vector4f();
     std::vector<Eigen::Vector3f>& getNormalMapGlobal();
     std::vector<Eigen::Vector3f>& getVertexMap();
     std::vector<Eigen::Vector3f>& getNormalMap();

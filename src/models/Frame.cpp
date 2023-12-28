@@ -62,6 +62,10 @@ std::vector<Eigen::Vector3f>& Frame::getVertexMapGlobal() {
     return *mVerticesGlobal;
 }
 
+std::vector<vector4f>& Frame::getVertexMapGlobal_vector4f() {
+    return *mVerticesGlobal_vector4f;
+}
+
 std::vector<Eigen::Vector3f>& Frame::getNormalMapGlobal() { return *mNormalsGlobal; }
 
 Eigen::Vector3f Frame::projectPointIntoFrame(const Eigen::Vector3f& point) {

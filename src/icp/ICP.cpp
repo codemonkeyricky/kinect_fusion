@@ -19,51 +19,55 @@ Matrix4f ICP::estimatePose(
     int iterationsNum
 ) {
 
-  for (size_t iteration = 0; iteration < iterationsNum; iteration++) {
-    const std::vector<std::pair<size_t, size_t>> correspondenceIds = findIndicesOfCorrespondingPoints(estimatedPose);
+    findIndicesOfCorrespondingPoints2(estimatedPose);
 
-    std::cout << "# corresponding points: " << correspondenceIds.size()
-        << std::endl;
-    std::cout << "# total number of points: "
-        << curFrame.getVertexMap().size() << std::endl;
+    for (size_t iteration = 0; iteration < iterationsNum; iteration++)
+    {
+        const std::vector<std::pair<size_t, size_t>> correspondenceIds = findIndicesOfCorrespondingPoints(estimatedPose);
 
-    int nPoints = correspondenceIds.size();
-    Eigen::Matrix3f rotationEP = estimatedPose.block(0, 0, 3, 3);
-    Eigen::Vector3f translationEP = estimatedPose.block(0, 3, 3, 1);
+        std::cout << "# corresponding points: " << correspondenceIds.size()
+                  << std::endl;
+        std::cout << "# total number of points: "
+                  << curFrame.getVertexMap().size() << std::endl;
 
-    MatrixXf A = MatrixXf::Zero(nPoints, 6);
-    VectorXf b = VectorXf::Zero(nPoints);
+        int nPoints = correspondenceIds.size();
+        Eigen::Matrix3f rotationEP = estimatedPose.block(0, 0, 3, 3);
+        Eigen::Vector3f translationEP = estimatedPose.block(0, 3, 3, 1);
 
-    for (size_t i = 0; i < nPoints; i++) {
-      auto pair = correspondenceIds[i];
-      const auto &x = rotationEP * curFrame.getVertexGlobal(pair.second) + translationEP;
-      const auto &y = prevFrame.getVertexGlobal(pair.first);
-      const auto &n = prevFrame.getNormalGlobal(pair.first);
+        MatrixXf A = MatrixXf::Zero(nPoints, 6);
+        VectorXf b = VectorXf::Zero(nPoints);
 
-      A(i, 0) = n(2) * x(1) - n(1) * x(2);
-      A(i, 1) = n(0) * x(2) - n(2) * x(0);
-      A(i, 2) = n(1) * x(0) - n(0) * x(1);
-      A(i, 3) = n(0);
-      A(i, 4) = n(1);
-      A(i, 5) = n(2);
-      b(i) = n(0) * y(0) + n(1) * y(1) + n(2) * y(2) - n(0) * x(0) -
-             n(1) * x(1) - n(2) * x(2);
-    }
+        for (size_t i = 0; i < nPoints; i++)
+        {
+            auto pair = correspondenceIds[i];
+            const auto &x = rotationEP * curFrame.getVertexGlobal(pair.second) + translationEP;
+            const auto &y = prevFrame.getVertexGlobal(pair.first);
+            const auto &n = prevFrame.getNormalGlobal(pair.first);
 
-    VectorXf x(6);
-    x = A.bdcSvd(ComputeThinU | ComputeThinV).solve(b);
+            A(i, 0) = n(2) * x(1) - n(1) * x(2);
+            A(i, 1) = n(0) * x(2) - n(2) * x(0);
+            A(i, 2) = n(1) * x(0) - n(0) * x(1);
+            A(i, 3) = n(0);
+            A(i, 4) = n(1);
+            A(i, 5) = n(2);
+            b(i) = n(0) * y(0) + n(1) * y(1) + n(2) * y(2) - n(0) * x(0) -
+                   n(1) * x(1) - n(2) * x(2);
+        }
 
-    const float alpha = x(0), beta = x(1), gamma = x(2);
-    Matrix3f rotation =
-        AngleAxisf(alpha, Vector3f::UnitX()).toRotationMatrix() *
-        AngleAxisf(beta, Vector3f::UnitY()).toRotationMatrix() *
-        AngleAxisf(gamma, Vector3f::UnitZ()).toRotationMatrix();
-    Vector3f translation = x.tail(3);
+        VectorXf x(6);
+        x = A.bdcSvd(ComputeThinU | ComputeThinV).solve(b);
 
-    Matrix4f curentPose = Matrix4f::Identity();
-    curentPose.block<3, 3>(0, 0) = rotation;
-    curentPose.block<3, 1>(0, 3) = translation;
-    estimatedPose = curentPose * estimatedPose;
+        const float alpha = x(0), beta = x(1), gamma = x(2);
+        Matrix3f rotation =
+            AngleAxisf(alpha, Vector3f::UnitX()).toRotationMatrix() *
+            AngleAxisf(beta, Vector3f::UnitY()).toRotationMatrix() *
+            AngleAxisf(gamma, Vector3f::UnitZ()).toRotationMatrix();
+        Vector3f translation = x.tail(3);
+
+        Matrix4f curentPose = Matrix4f::Identity();
+        curentPose.block<3, 3>(0, 0) = rotation;
+        curentPose.block<3, 1>(0, 3) = translation;
+        estimatedPose = curentPose * estimatedPose;
   }
   return estimatedPose;
 }

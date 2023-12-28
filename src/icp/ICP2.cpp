@@ -53,9 +53,9 @@ std::array<float, 16> convertToArray(
 }
 
 std::array<float, 4> rotate_translate(
-    std::array<float, 4> &v,
-    std::array<float, 16> &r,
-    std::array<float, 4> &t)
+    const std::array<float, 4> &v,
+    const std::array<float, 16> &r,
+    const std::array<float, 4> &t)
 {
     std::array<float, 4> rv = {};
     for (int i = 0; i < 4; ++i)
@@ -66,6 +66,8 @@ std::array<float, 4> rotate_translate(
     }
     return rv;
 }
+
+static vector4f output[640 * 480];
 
 // Helper method to find corresponding points between curent frame and
 // previous frame Reference Paper:
@@ -79,8 +81,31 @@ std::array<float, 4> rotate_translate(
 void ICP::findIndicesOfCorrespondingPoints2(
     const Eigen::Matrix4f &estPose)
 {
-    #if 0
+    auto start = std::chrono::high_resolution_clock::now();
+
     Eigen::Matrix4f estimatedPose = estPose;
+    const auto estimatedPoseInv = estimatedPose.inverse();
+
+    const std::vector<vector4f> &prevVertex = prevFrame.getVertexMapGlobal_vector4f();
+
+    auto r = getRotation(estimatedPoseInv);
+    auto t = getTranslation(estimatedPoseInv);
+    auto ex = curFrame.getExtrinsicMatrix();
+    auto ex_r = getRotation(ex);
+    auto ex_t = getTranslation(ex);
+
+    for (size_t k = 0; k < prevVertex.size(); k++)
+    {
+        auto curr_camera = rotate_translate(prevVertex[k], r, t);
+        auto curr_frame = rotate_translate(curr_camera, ex_r, ex_t);
+        output[k] = curr_frame;
+    }
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    std::cout << "### ICP2 duration: " << duration.count() << std::endl;
+
+    #if 0
     std::vector<std::pair<size_t, size_t>> indicesOfCorrespondingPoints;
 
     const std::vector<Eigen::Vector3f> &prevFrameVertexMapGlobal = prevFrame.getVertexMapGlobal();
@@ -92,7 +117,6 @@ void ICP::findIndicesOfCorrespondingPoints2(
     const auto rotation = estimatedPose.block(0, 0, 3, 3);
     const auto translation = estimatedPose.block(0, 3, 3, 1);
 
-    const auto estimatedPoseInv = estimatedPose.inverse();
 
     const auto rotationInv = estimatedPoseInv.block(0, 0, 3, 3);
     const auto translationInv = estimatedPoseInv.block(0, 3, 3, 1);
