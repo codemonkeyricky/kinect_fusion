@@ -15,9 +15,9 @@ ICP::ICP(Frame &_prevFrame, Frame &_curFrame, const double distanceThreshold,
       normalThreshold(normalThreshold) {}
 
 Matrix4f ICP::estimatePose(
-    Eigen::Matrix4f& estimatedPose,
-    int iterationsNum
-) {
+    Eigen::Matrix4f &estimatedPose,
+    int iterationsNum)
+{
 
     findIndicesOfCorrespondingPoints2(estimatedPose);
 
@@ -193,35 +193,8 @@ __attribute__((optimize("O0"))) std::vector<std::pair<size_t, size_t>> ICP::find
         // std::cout << "Curent Point (Camera): " << curPoint[0] << " " <<
         // curPoint[1] << " " << curPoint[2] << std::endl;
 
-#if 1
-        auto v = convertToArray(prevVertex);
-        auto r = getRotation(estimatedPoseInv);
-        auto t = getTranslation(estimatedPoseInv);
-        auto curr_camera = rotate_translate(v, r, t);
-
-        auto extrinsics = curFrame.getExtrinsicMatrix();
-        auto ex_r = getRotation(extrinsics);
-        auto ex_t = getTranslation(extrinsics);
-        auto curr_frame = rotate_translate(curr_camera, ex_r, ex_t);
-
-        auto intrinsics = convertToArray(curFrame.getIntrinsicMatrix());
-
-        // asm("#bullshit");
-        // volatile auto rv2 = r * v + t;
-        // asm("#bullshit");
-
-        // https://stackoverflow.com/questions/30674291/how-to-check-inf-for-avx-intrinsic-m256
-        // __m256 self_sub_v8 = _mm128_sub_ps(float_v8, float_v8);
-        // return _mm256_movemask_epi8(_mm256_castps_si256(self_sub_v8));
-
-#endif
-
         if (prevVertex.allFinite() && prevNormal.allFinite())
         {
-
-#if 1
-#endif
-
             Eigen::Vector3f prevPointCurCamera = rotationInv * prevVertex + translationInv;
             // project point from global camera system into camera system of
             // the current frame

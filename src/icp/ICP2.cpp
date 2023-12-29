@@ -7,6 +7,11 @@
 #include <memory>
 #include <utility>
 
+// #include <xmmintrin.h>
+// #include <emmintrin.h>
+// #include <smmintrin.h>
+#include <immintrin.h>
+
 typedef std::array<float, 4> vector4f;
 typedef std::array<float, 16> matrix4f;
 
@@ -67,6 +72,41 @@ inline vector4f rotate_translate(
     return rv;
 }
 
+// __attribute__((optimize("O0")))
+vector4f get_valid_mask(
+    const vector4f &vv)
+{
+    auto v = _mm_set_ps(vv[3], vv[2], vv[1], vv[0]);
+    __m128 self_sub_v8 = _mm_sub_ps(v, v);
+    auto has_inf = _mm_movemask_epi8(_mm_castps_si128(self_sub_v8));
+    auto inf_mask = _mm_set1_ps(has_inf);
+    auto ones = _mm_set1_ps(1);
+    inf_mask = _mm_min_ps(inf_mask, ones);        // 4 ones or 4 zeroes
+    auto valid_mask = _mm_xor_ps(inf_mask, ones); // negate
+
+    vector4f rv;
+    _mm_storeu_ps(&rv[0], valid_mask);
+    return rv;
+}
+
+// __attribute__((optimize("O0")))
+inline vector4f is_coord_in_range(const vector4f &coord)
+{
+    auto c = _mm_set_ps(coord[0], coord[1], 0, 0);
+    auto min_threshold = _mm_set_ps(0, 0, 0, 0);
+    auto max_threshold = _mm_set_ps(640, 480, 0, 0);
+
+    __m128 a = _mm_cmp_ps(c, min_threshold, _CMP_LT_OS); // Less-than comparison with minThreshold
+    __m128 b = _mm_cmp_ps(c, max_threshold, _CMP_GT_OS); // Greater-than comparison with maxThreshold
+
+    // Combine the comparison results
+    __m128 r = _mm_or_ps(a, b);
+
+    vector4f rv;
+    _mm_storeu_ps(&rv[0], r); 
+    return rv;
+}
+
 static vector4f output[640 * 480];
 
 // Helper method to find corresponding points between curent frame and
@@ -93,9 +133,18 @@ void ICP::findIndicesOfCorrespondingPoints2(
     auto ex = curFrame.getExtrinsicMatrix();
     auto ex_r = getRotation(ex);
     auto ex_t = getTranslation(ex);
+    auto in = convertToArray(curFrame.getIntrinsicMatrix());
+    vector4f no_translate = {};
 
     for (size_t k = 0; k < prevVertex.size(); k++)
     {
+        /* 
+         * Subtract all element by itself. INF minus INF is still INF. Create a mask from the MSB, 
+         * non-zero mask means at least one element was INF. 
+         */
+        auto valid0 = get_valid_mask(prevVertex[k]);
+        // auto valid1 ... 
+
         // Transform to global coordinate 
         auto curr_camera = rotate_translate(prevVertex[k], r, t);
 
@@ -103,13 +152,27 @@ void ICP::findIndicesOfCorrespondingPoints2(
         auto curr_frame = rotate_translate(curr_camera, ex_r, ex_t);
 
         // Project to image plane
+        auto img_coord = rotate_translate(curr_frame, in, no_translate);
 
-        output[k] = curr_frame;
+        auto valid2 = is_coord_in_range(img_coord);
+
+        // TODO: temp
+        // output[k] = img_coord; 
+        // output[k] = valid2;
+
+        vector4f rv = {1, 1, 1, 1};
+        for (auto i = 0; i < 4; ++i)
+            rv[i] *= valid0[0];
+
+        for (auto i = 0; i < 4; ++i)
+            rv[i] *= valid2[0];
+
+        output[k] = rv; 
     }
 
     auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(stop - start);
-    std::cout << "### ICP2 duration: " << duration.count() << " ns" << std::endl;
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    std::cout << "### ICP2 duration: " << duration.count() << " us" << std::endl;
 
     #if 0
     std::vector<std::pair<size_t, size_t>> indicesOfCorrespondingPoints;
