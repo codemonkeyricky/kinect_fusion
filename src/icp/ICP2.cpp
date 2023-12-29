@@ -72,6 +72,21 @@ inline vector4f rotate_translate(
     return rv;
 }
 
+inline vector4f rotate_normalize(
+    const vector4f &v,
+    const matrix4f &r)
+{
+    vector4f rv = {};
+    for (int i = 0; i < 4; ++i)
+        for (int j = 0; j < 4; ++j)
+            rv[i] += r[i * 4 + j] * v[j];
+
+    for (int i = 0; i < 4; ++i)
+        rv[i] /= r[2];
+
+    return rv;
+}
+
 // __attribute__((optimize("O0")))
 vector4f get_valid_mask(
     const vector4f &vv)
@@ -152,8 +167,9 @@ void ICP::findIndicesOfCorrespondingPoints2(
         auto curr_frame = rotate_translate(curr_camera, ex_r, ex_t);
 
         // Project to image plane
-        auto img_coord = rotate_translate(curr_frame, in, no_translate);
+        auto img_coord = rotate_normalize(curr_frame, in);
 
+        // Range check
         auto valid2 = is_coord_in_range(img_coord);
 
         // TODO: temp
