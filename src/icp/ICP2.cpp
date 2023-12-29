@@ -122,6 +122,10 @@ inline vector4f is_coord_in_range(const vector4f &coord)
     return rv;
 }
 
+//#include <rsvd/Constants.hpp>
+//#include <rsvd/ErrorEstimators.hpp>
+//#include <rsvd/RandomizedSvd.hpp>
+
 static vector4f output[640 * 480];
 
 // Helper method to find corresponding points between curent frame and
