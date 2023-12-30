@@ -86,6 +86,9 @@ int main() {
           // std::vector<std::pair<size_t, size_t>> correspondenceIds(
           //     {{302990, 302990}});
 
+        //   icp.findIndicesOfCorrespondingPoints2(pose); 
+        //   icp.findIndicesOfCorrespondingPoints2(pose); 
+
           pose = icp.estimatePose(pose, ICP_ITERATIONS);
           std::cout << pose << std::endl;
 
