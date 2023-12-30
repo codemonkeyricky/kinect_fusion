@@ -143,6 +143,8 @@ inline vector4f mask_apply(const vector4f &input, const vector4f &mask)
 
 static vector4f output[640 * 480];
 
+std::vector<int> p_index; 
+
 // Helper method to find corresponding points between curent frame and
 // previous frame Reference Paper:
 // https://www.cvl.iis.u-tokyo.ac.jp/~oishi/Papers/Alignment/Blais_Registering_multiview_PAMI1995.pdf
@@ -198,7 +200,7 @@ void ICP::findIndicesOfCorrespondingPoints2(
         img_coord = mask_apply(img_coord, in_range_valid);
 
         if (img_coord[0] && img_coord[1])
-            ++cnt;
+            p_index.push_back(k);
 
         output[k] = rv; 
     }
