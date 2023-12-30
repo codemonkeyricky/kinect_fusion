@@ -36,7 +36,7 @@ vector4f getTranslation(
     return t;
 }
 
-vector4f convertToArray(
+inline vector4f convertToArray(
     const Eigen::Vector3f &v)
 {
     vector4f rv;
@@ -48,7 +48,7 @@ vector4f convertToArray(
 }
 
 // __attribute__((optimize("O0")))
-matrix4f convertToArray(
+inline matrix4f convertToArray(
     const Eigen::Matrix3f &m)
 {
     matrix4f rv = {};
@@ -90,23 +90,25 @@ inline vector4f rotate_normalize(
 }
 
 // __attribute__((optimize("O0")))
-vector4f get_valid_mask(
+inline vector4f get_valid_mask(
     const vector4f &vv)
 {
     auto v = _mm_set_ps(vv[3], vv[2], vv[1], vv[0]);
+    // INF substract itself is still INF
     __m128 self_sub_v8 = _mm_sub_ps(v, v);
+    // Count 
     auto has_inf = _mm_movemask_epi8(_mm_castps_si128(self_sub_v8));
-    auto inf_mask = _mm_set1_ps(has_inf);
-    auto ones = _mm_set1_ps(1);
-    inf_mask = _mm_min_ps(inf_mask, ones);        // 4 ones or 4 zeroes
-    auto valid_mask = _mm_xor_ps(inf_mask, ones); // negate
+    // Broadcast 
+    auto inf_mask = _mm_set1_ps(has_inf);   // either all zeroes or all non-zero
+    auto zeros = _mm_set1_ps(0.0f);
+    auto valid = _mm_cmp_ps(zeros, inf_mask, _CMP_EQ_OQ); // Greater-than comparison with maxThreshold
 
     vector4f rv;
-    _mm_storeu_ps(&rv[0], valid_mask);
+    _mm_storeu_ps(&rv[0], valid);
     return rv;
 }
 
-__attribute__((optimize("O0")))
+// __attribute__((optimize("O0")))
 inline vector4f is_coord_in_range(const vector4f &coord)
 {
     auto c = _mm_set_ps(0, 0, coord[1], coord[0]);
@@ -120,7 +122,7 @@ inline vector4f is_coord_in_range(const vector4f &coord)
     __m128 r = _mm_or_ps(a, b);
 
     a = _mm_set1_ps(0.0f);
-    b = _mm_set1_ps(1.0f);
+    b = _mm_set1_ps(-0.0f);
     r = _mm_blendv_ps(a, b, r);
 
     vector4f rv;
@@ -128,12 +130,17 @@ inline vector4f is_coord_in_range(const vector4f &coord)
     return rv;
 }
 
-__attribute__((optimize("O0")))
+// __attribute__((optimize("O0")))
 inline vector4f mask_apply(const vector4f &input, const vector4f &mask)
 {
-    auto rv = input;
-    for (auto i = 0; i < 4; ++i)
-        rv[i] *= mask[i];
+    auto a = _mm_set1_ps(0.0f);
+    auto b = _mm_set_ps(input[3], input[2], input[1], input[0]);
+    auto mask_mm = _mm_set_ps(mask[3], mask[2], mask[1], mask[0]);
+
+    auto r = _mm_blendv_ps(a, b, mask_mm);
+
+    vector4f rv;
+    _mm_storeu_ps(&rv[0], r); 
     return rv;
 }
 
@@ -153,7 +160,7 @@ std::vector<int> p_index;
 // previous frame Simple version: only take euclidean distance between
 // points into consideration without normals Advanced version: Euclidean
 // distance between points + difference in normal angles
-__attribute__((optimize("O0")))
+// __attribute__((optimize("O0")))
 void ICP::findIndicesOfCorrespondingPoints2(
     const Eigen::Matrix4f &estPose)
 {
@@ -194,15 +201,14 @@ void ICP::findIndicesOfCorrespondingPoints2(
         // Range check
         auto in_range_valid = is_coord_in_range(img_coord);
 
-        vector4f rv; 
+        // vector4f rv; 
         img_coord = mask_apply(img_coord, vertex_valid);
         img_coord = mask_apply(img_coord, normal_valid);
         img_coord = mask_apply(img_coord, in_range_valid);
 
-        if (img_coord[0] && img_coord[1])
-            p_index.push_back(k);
+        // TODO: still missing cross-referencing with current frame
 
-        output[k] = rv; 
+        output[k] = img_coord; 
     }
 
     auto stop = std::chrono::high_resolution_clock::now();
@@ -210,11 +216,12 @@ void ICP::findIndicesOfCorrespondingPoints2(
     std::cout << "### ICP2 duration: " << duration.count() << " us" << std::endl;
 }
 
-__attribute__((optimize("O0")))
+// __attribute__((optimize("O0")))
 void ICP::findIndicesOfCorrespondingPoints3(
     const Eigen::Matrix4f &estPose,
     int k)
 {
+    #if 0
     auto start = std::chrono::high_resolution_clock::now();
 
     Eigen::Matrix4f estimatedPose = estPose;
@@ -266,4 +273,5 @@ void ICP::findIndicesOfCorrespondingPoints3(
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     std::cout << "### ICP3 duration: " << duration.count() << " us" << std::endl;
+    #endif
 }
