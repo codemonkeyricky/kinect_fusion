@@ -26,6 +26,7 @@ Matrix4f ICP::estimatePose(
 {
 
     findIndicesOfCorrespondingPoints2(estimatedPose);
+    findIndicesOfCorrespondingPoints2(estimatedPose);
 
     for (size_t iteration = 0; iteration < iterationsNum; iteration++)
     {

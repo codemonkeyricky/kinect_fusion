@@ -148,7 +148,7 @@ inline vector4f mask_apply(const vector4f &input, const vector4f &mask)
 //#include <rsvd/ErrorEstimators.hpp>
 //#include <rsvd/RandomizedSvd.hpp>
 
-static vector4f output[640 * 480];
+vector4f output[640 * 480];
 
 std::vector<int> p_index; 
 
@@ -201,7 +201,7 @@ void ICP::findIndicesOfCorrespondingPoints2(
         // Range check
         auto in_range_valid = is_coord_in_range(img_coord);
 
-        // vector4f rv; 
+        vector4f rv; 
         img_coord = mask_apply(img_coord, vertex_valid);
         img_coord = mask_apply(img_coord, normal_valid);
         img_coord = mask_apply(img_coord, in_range_valid);
