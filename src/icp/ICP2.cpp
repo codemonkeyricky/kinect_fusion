@@ -251,11 +251,11 @@ void ICP::findIndicesOfCorrespondingPoints3(
         auto in_range_valid = is_coord_in_range(img_coord);
 
         vector4f rv; 
-        rv = mask_apply(img_coord, vertex_valid);
-        rv = mask_apply(img_coord, normal_valid);
-        rv = mask_apply(img_coord, in_range_valid);
+        img_coord = mask_apply(img_coord, vertex_valid);
+        img_coord = mask_apply(img_coord, normal_valid);
+        img_coord = mask_apply(img_coord, in_range_valid);
 
-        if (rv[0] && rv[1])
+        if (img_coord[0] && img_coord[1])
             ++cnt;
 
         output[k] = rv; 
