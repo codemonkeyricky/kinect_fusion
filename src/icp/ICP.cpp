@@ -215,6 +215,8 @@ __attribute__((optimize("O0"))) std::vector<std::pair<size_t, size_t>> ICP::find
 
             if (curFrame.containsImgPoint(prevPointImgCoordCurFrame))
             {
+                findIndicesOfCorrespondingPoints3(estPose, idx);
+
                 size_t curIdx =
                     prevPointImgCoordCurFrame[1] * curFrame.getFrameWidth() +
                     prevPointImgCoordCurFrame[0];
