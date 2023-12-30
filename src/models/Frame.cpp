@@ -66,6 +66,10 @@ std::vector<vector4f>& Frame::getVertexMapGlobal_vector4f() {
     return *mVerticesGlobal_vector4f;
 }
 
+std::vector<vector4f>& Frame::getNormalMapGlobal_vector4f() {
+    return *mNormalGlobal_vector4f;
+}
+
 std::vector<Eigen::Vector3f>& Frame::getNormalMapGlobal() { return *mNormalsGlobal; }
 
 Eigen::Vector3f Frame::projectPointIntoFrame(const Eigen::Vector3f& point) {
@@ -82,6 +86,7 @@ void Frame::setExtrinsicMatrix(const Eigen::Matrix4f& extMatrix) {
     mNormalsGlobal = std::make_shared<std::vector<Eigen::Vector3f>>(rotatePoints(*mNormals, rotation));
 
     mVerticesGlobal_vector4f = std::make_shared<std::vector<vector4f>>(transformPoints(*mVertices, extrinsicMatrixInv, 0));
+    mNormalGlobal_vector4f   = std::make_shared<std::vector<vector4f>>(rotatePoints2(*mNormals, rotation, 0));
 }
 
 Eigen::Vector2i Frame::projectOntoImgPlane(const Eigen::Vector3f& point) {
@@ -94,7 +99,7 @@ Eigen::Vector2i Frame::projectOntoImgPlane(const Eigen::Vector3f& point) {
 }
 
 std::vector<vector4f> Frame::transformPoints(
-    const std::vector<Eigen::Vector3f>& points,
+    const std::vector<Eigen::Vector3f> &points,
     const Eigen::Matrix4f &transformation,
     bool dummy)
 {
@@ -102,10 +107,33 @@ std::vector<vector4f> Frame::transformPoints(
     const Eigen::Vector3f translation = transformation.block(0, 3, 3, 1);
     std::vector<vector4f> transformed(points.size());
 
-    for (size_t idx = 0; idx < points.size(); ++idx) {
+    for (size_t idx = 0; idx < points.size(); ++idx)
+    {
         if (points[idx].allFinite())
         {
             auto rv = rotation * points[idx] + translation;
+            for (auto i = 0; i < 3; ++i)
+                transformed[idx][i] = rv[i];
+        }
+        else
+            for (auto i = 0; i < 4; ++i)
+                transformed[idx][i] = MINF;
+    }
+    return transformed;
+}
+
+std::vector<vector4f> Frame::rotatePoints2(
+    const std::vector<Eigen::Vector3f> &points,
+    const Eigen::Matrix3f &rotation,
+    bool dummy)
+{
+    std::vector<vector4f> transformed(points.size());
+
+    for (size_t idx = 0; idx < points.size(); ++idx)
+    {
+        if (points[idx].allFinite())
+        {
+            auto rv = rotation * points[idx];
             for (auto i = 0; i < 3; ++i)
                 transformed[idx][i] = rv[i];
         }

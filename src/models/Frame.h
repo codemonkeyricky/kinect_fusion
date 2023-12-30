@@ -31,6 +31,7 @@ public:
     std::vector<Eigen::Vector3f> &getVertexMapGlobal();
     std::vector<vector4f> &getVertexMapGlobal_vector4f();
     std::vector<Eigen::Vector3f>& getNormalMapGlobal();
+    std::vector<vector4f> &getNormalMapGlobal_vector4f();
     std::vector<Eigen::Vector3f>& getVertexMap();
     std::vector<Eigen::Vector3f>& getNormalMap();
     int getFrameHeight();
@@ -74,6 +75,11 @@ private:
         const std::vector<Eigen::Vector3f>& points,
         const Eigen::Matrix3f& rotation);
 
+    std::vector<vector4f> rotatePoints2(
+        const std::vector<Eigen::Vector3f> &points,
+        const Eigen::Matrix3f &rotation,
+        bool dummy);
+
     int depthWidth;
     int depthHeight;
     const float* depthMap;
@@ -81,8 +87,9 @@ private:
     std::shared_ptr<std::vector<Eigen::Vector3f>> mVertices;
     std::shared_ptr<std::vector<Eigen::Vector3f>> mNormals;
     std::shared_ptr<std::vector<Eigen::Vector3f>> mVerticesGlobal;
-    std::shared_ptr<std::vector<vector4f>> mVerticesGlobal_vector4f;
     std::shared_ptr<std::vector<Eigen::Vector3f>> mNormalsGlobal;
+    std::shared_ptr<std::vector<vector4f>> mVerticesGlobal_vector4f;
+    std::shared_ptr<std::vector<vector4f>> mNormalGlobal_vector4f;
     Eigen::Matrix4f extrinsicMatrix;
     Eigen::Matrix3f intrinsicMatrix;
 };

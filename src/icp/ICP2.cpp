@@ -47,13 +47,14 @@ vector4f convertToArray(
     return rv;
 }
 
+// __attribute__((optimize("O0")))
 matrix4f convertToArray(
     const Eigen::Matrix3f &m)
 {
     matrix4f rv = {};
     for (auto i = 0; i < 3; ++i)
         for (auto j = 0; j < 3; ++j)
-            rv[i * 4 + j] = m(i, j);
+            rv[i * 4 + j] = m.data()[j * 3 + i];
     return rv;
 }
 
@@ -72,6 +73,7 @@ inline vector4f rotate_translate(
     return rv;
 }
 
+// __attribute__((optimize("O0")))
 inline vector4f rotate_normalize(
     const vector4f &v,
     const matrix4f &r)
@@ -82,7 +84,7 @@ inline vector4f rotate_normalize(
             rv[i] += r[i * 4 + j] * v[j];
 
     for (int i = 0; i < 4; ++i)
-        rv[i] /= r[2];
+        rv[i] /= rv[2];
 
     return rv;
 }
@@ -122,6 +124,14 @@ inline vector4f is_coord_in_range(const vector4f &coord)
     return rv;
 }
 
+inline vector4f mask_apply(const vector4f &input, const vector4f &mask)
+{
+    auto rv = input;
+    for (auto i = 0; i < 4; ++i)
+        rv[i] *= mask[i];
+    return rv;
+}
+
 //#include <rsvd/Constants.hpp>
 //#include <rsvd/ErrorEstimators.hpp>
 //#include <rsvd/RandomizedSvd.hpp>
@@ -136,7 +146,7 @@ static vector4f output[640 * 480];
 // previous frame Simple version: only take euclidean distance between
 // points into consideration without normals Advanced version: Euclidean
 // distance between points + difference in normal angles
-// __attribute__((optimize("O0")))
+__attribute__((optimize("O0")))
 void ICP::findIndicesOfCorrespondingPoints2(
     const Eigen::Matrix4f &estPose)
 {
@@ -146,23 +156,26 @@ void ICP::findIndicesOfCorrespondingPoints2(
     const auto estimatedPoseInv = estimatedPose.inverse();
 
     const std::vector<vector4f> &prevVertex = prevFrame.getVertexMapGlobal_vector4f();
+    const std::vector<vector4f> &prevNormal = prevFrame.getNormalMapGlobal_vector4f();
 
     auto r = getRotation(estimatedPoseInv);
     auto t = getTranslation(estimatedPoseInv);
     auto ex = curFrame.getExtrinsicMatrix();
     auto ex_r = getRotation(ex);
     auto ex_t = getTranslation(ex);
+    // auto in2 = ;
+    // in2.transposeInPlace();
     auto in = convertToArray(curFrame.getIntrinsicMatrix());
-    vector4f no_translate = {};
 
+    int cnt = 0;
     for (size_t k = 0; k < prevVertex.size(); k++)
     {
         /* 
          * Subtract all element by itself. INF minus INF is still INF. Create a mask from the MSB, 
          * non-zero mask means at least one element was INF. 
          */
-        auto valid0 = get_valid_mask(prevVertex[k]);
-        // auto valid1 ... 
+        auto vertex_valid = get_valid_mask(prevVertex[k]);
+        auto normal_valid = get_valid_mask(prevNormal[k]);
 
         // Transform to global coordinate 
         auto curr_camera = rotate_translate(prevVertex[k], r, t);
@@ -174,18 +187,15 @@ void ICP::findIndicesOfCorrespondingPoints2(
         auto img_coord = rotate_normalize(curr_frame, in);
 
         // Range check
-        auto valid2 = is_coord_in_range(img_coord);
+        auto in_range_valid = is_coord_in_range(img_coord);
 
-        // TODO: temp
-        // output[k] = img_coord; 
-        // output[k] = valid2;
+        vector4f rv; 
+        rv = mask_apply(img_coord, vertex_valid);
+        rv = mask_apply(img_coord, normal_valid);
+        rv = mask_apply(img_coord, in_range_valid);
 
-        vector4f rv = {1, 1, 1, 1};
-        for (auto i = 0; i < 4; ++i)
-            rv[i] *= valid0[0];
-
-        for (auto i = 0; i < 4; ++i)
-            rv[i] *= valid2[0];
+        if (rv[0] && rv[1])
+            ++cnt;
 
         output[k] = rv; 
     }
