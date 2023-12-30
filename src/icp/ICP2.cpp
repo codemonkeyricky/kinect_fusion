@@ -161,6 +161,7 @@ std::vector<int> p_index;
 // points into consideration without normals Advanced version: Euclidean
 // distance between points + difference in normal angles
 // __attribute__((optimize("O0")))
+// __attribute__((optimize("align-functions=64")))
 void ICP::findIndicesOfCorrespondingPoints2(
     const Eigen::Matrix4f &estPose)
 {

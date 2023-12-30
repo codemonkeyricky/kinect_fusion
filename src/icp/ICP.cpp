@@ -19,7 +19,7 @@ ICP::ICP(Frame &_prevFrame, Frame &_curFrame, const double distanceThreshold,
       normalThreshold(normalThreshold) {}
 
 
-__attribute__((optimize("O0")))
+// __attribute__((optimize("O0")))
 Matrix4f ICP::estimatePose(
     Eigen::Matrix4f &estimatedPose,
     int iterationsNum)
@@ -65,8 +65,8 @@ Matrix4f ICP::estimatePose(
         auto start = std::chrono::high_resolution_clock::now();
 
         VectorXf x(6), y(6);
-        x = A.bdcSvd(ComputeThinU | ComputeThinV).solve(b);
-        // x = (A.transpose() * A).ldlt().solve(A.transpose() * b);
+        // x = A.bdcSvd(ComputeThinU | ComputeThinV).solve(b);
+        x = (A.transpose() * A).ldlt().solve(A.transpose() * b);
         // static float xx[6], yy[6];
         // for (auto i = 0; i < 6; ++i)
         //     xx[i] = x(i), yy[i] = y(i);
