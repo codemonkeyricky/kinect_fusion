@@ -1,0 +1,2 @@
+build --copt="-march=native" 
+build --copt="-g"
