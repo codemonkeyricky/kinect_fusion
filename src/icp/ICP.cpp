@@ -1,11 +1,13 @@
 // Copyright 2020 Vladimir
 // Author: Vladimir
-#include "ICP.h"
 
 #include <chrono>
 #include <iostream>
 #include <memory>
 #include <utility>
+
+#include "ICP.h"
+#include "Frame.h"
 
 //#include <rsvd/Constants.hpp>
 //#include <rsvd/ErrorEstimators.hpp>
@@ -18,6 +20,7 @@ ICP::ICP(Frame &_prevFrame, Frame &_curFrame, const double distanceThreshold,
       distanceThreshold(distanceThreshold),
       normalThreshold(normalThreshold) {}
 
+extern std::vector<int> pp;
 
 // __attribute__((optimize("O0")))
 Matrix4f ICP::estimatePose(
@@ -27,10 +30,16 @@ Matrix4f ICP::estimatePose(
 
     findIndicesOfCorrespondingPoints2(estimatedPose);
     findIndicesOfCorrespondingPoints2(estimatedPose);
+    findIndicesOfCorrespondingPoints3(estimatedPose);
 
     for (size_t iteration = 0; iteration < iterationsNum; iteration++)
     {
         const std::vector<std::pair<size_t, size_t>> correspondenceIds = findIndicesOfCorrespondingPoints(estimatedPose);
+
+        volatile int cnt = 0;
+        // for (auto k = 0; k < correspondenceIds.size(); ++k)
+        //     if (correspondenceIds[k].first != pp[k])
+        //         ++cnt;
 
         std::cout << "# corresponding points: " << correspondenceIds.size()
                   << std::endl;
@@ -105,9 +114,6 @@ Matrix4f ICP::estimatePose(
 //     }
 // }
 
-typedef std::array<float, 4> vector4f;
-typedef std::array<float, 16> matrix4f;
-
 static std::array<float, 16> getRotation(
     const Eigen::Matrix4f &mat)
 {
@@ -173,7 +179,8 @@ static std::array<float, 4> rotate_translate(
 // previous frame Simple version: only take euclidean distance between
 // points into consideration without normals Advanced version: Euclidean
 // distance between points + difference in normal angles
-__attribute__((optimize("O0"))) std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
+// __attribute__((optimize("O0"))) 
+std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
     const Eigen::Matrix4f &estPose)
 {
     Eigen::Matrix4f estimatedPose = estPose;
@@ -216,8 +223,6 @@ __attribute__((optimize("O0"))) std::vector<std::pair<size_t, size_t>> ICP::find
 
             if (curFrame.containsImgPoint(prevPointImgCoordCurFrame))
             {
-                findIndicesOfCorrespondingPoints3(estPose, idx);
-
                 size_t curIdx =
                     prevPointImgCoordCurFrame[1] * curFrame.getFrameWidth() +
                     prevPointImgCoordCurFrame[0];

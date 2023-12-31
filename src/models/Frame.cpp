@@ -139,7 +139,7 @@ std::vector<vector4f> Frame::rotatePoints2(
         }
         else
             for (auto i = 0; i < 4; ++i)
-                transformed[idx][i] = MINF; 
+                transformed[idx][i] = MINF;
     }
     return transformed;
 }

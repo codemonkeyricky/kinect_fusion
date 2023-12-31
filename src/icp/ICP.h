@@ -28,9 +28,8 @@ public:
     void findIndicesOfCorrespondingPoints2(
         const Eigen::Matrix4f &estimatedPose);
 
-    void findIndicesOfCorrespondingPoints3(
-        const Eigen::Matrix4f &estPose,
-        int k);
+    std::vector<std::pair<size_t, size_t>> findIndicesOfCorrespondingPoints3(
+        const Eigen::Matrix4f &estPose);
 
 private:
     Frame &prevFrame;

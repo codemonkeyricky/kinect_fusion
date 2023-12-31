@@ -11,7 +11,20 @@
 #include "VirtualSensor.h"
 #include <memory>
 
-typedef std::array<float, 4> vector4f;
+
+struct alignas(16) vector4f 
+{
+    std::array<float, 4> data;
+    float operator [](int i) const {return data[i];}
+    float & operator [](int i) {return data[i];}
+}; 
+
+struct alignas(16) matrix4f
+{
+    std::array<vector4f, 4> data;
+    vector4f operator [](int i) const {return data[i];}
+    vector4f & operator [](int i) {return data[i];}
+};
 
 class Frame {
     friend class RayCaster;
