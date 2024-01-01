@@ -57,37 +57,6 @@ inline matrix4f convertToArray(
     return rv;
 }
 
-inline vector4f rotate_translate(
-    const vector4f &v,
-    const matrix4f &r,
-    const vector4f &t)
-{
-    vector4f rv = {};
-    for (int i = 0; i < 4; ++i)
-    {
-        for (int j = 0; j < 4; ++j)
-            rv[i] += r[i][j] * v[j];
-        rv[i] += t[i];
-    }
-    return rv;
-}
-
-// __attribute__((optimize("O0")))
-inline vector4f rotate_normalize(
-    const vector4f &v,
-    const matrix4f &r)
-{
-    vector4f rv = {};
-    for (int i = 0; i < 4; ++i)
-        for (int j = 0; j < 4; ++j)
-            rv[i] += r[i][j] * v[j];
-
-    for (int i = 0; i < 4; ++i)
-        rv[i] /= rv[2];
-
-    return rv;
-}
-
 inline vector4i round(const vector4f &v)
 {
     auto vv = _mm_load_ps((const float*)&v);
@@ -191,58 +160,14 @@ void ICP::findIndicesOfCorrespondingPoints2(
 
     for (size_t k = 0; k < prevVertex.size(); k++)
     {
-        /* 
-         * Subtract all element by itself. INF minus INF is still INF. Create a mask from the MSB, 
-         * non-zero mask means at least one element was INF. 
-         */
-        // vector4f vertex_valid, normal_valid; 
-        // get_valid_mask(prevVertex[k], vertex_valid);
-        // get_valid_mask(prevNormal[k], normal_valid);
-
-        // Transform to global coordinate
-        // auto curr_camera = rotate_translate(prevVertex[k], r, t);
         auto curr_camera = r * prevVertex[k] + t;
-
-        // Project to current camera frame
         auto curr_frame = ex_r * curr_camera + ex_t;
-
-        // Project to image plane
         auto img_coord = in * curr_frame;
         for (int i = 0; i < 4; ++i)
             img_coord[i] /= img_coord[2];
-
-        // Range check
-        // auto in_range_valid = is_coord_in_range(img_coord);
-
-        // img_coord = mask_apply(img_coord, vertex_valid);
-        // img_coord = mask_apply(img_coord, normal_valid);
-        // img_coord = mask_apply(img_coord, in_range_valid);
-
-        // TODO: still missing cross-referencing with current frame
-
         output[k] = img_coord; 
-
-        // vector4f vertex_valid, normal_valid; 
-        // get_valid_mask(prevVertex[k], vertex_valid);
-        // output[k] = vertex_valid;
-
-        // output[k] = prevVertex[k];
     }
-
-    // size_t curIdx =
-    //     prevPointImgCoordCurFrame[1] * curFrame.getFrameWidth() +
-    //     prevPointImgCoordCurFrame[0];
-
-    // Eigen::Vector3f curFramePointGlobal = rotation * curFrameVertexMapGlobal[curIdx] + translation;
-    // Eigen::Vector3f curFrameNormalGlobal = rotation * curFrameNormalMapGlobal[curIdx];
-
-    // if (curFramePointGlobal.allFinite() &&
-    //     (curFramePointGlobal - prevVertex).norm() < distanceThreshold && curFrameNormalGlobal.allFinite() && (std::abs(curFrameNormalGlobal.dot(prevNormal)) / curFrameNormalGlobal.norm() / prevNormal.norm() < normalThreshold))
-    // {
-    //     indicesOfCorrespondingPoints.push_back(std::make_pair(idx, curIdx));
-    // }
-
-    vector4f *__restrict output_ptr = &output[0];
+    
     int cnt = 0;
 
     auto time1 = std::chrono::high_resolution_clock::now();
