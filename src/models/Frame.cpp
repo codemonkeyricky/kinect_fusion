@@ -114,6 +114,7 @@ std::vector<vector4f> Frame::transformPoints(
             auto rv = rotation * points[idx] + translation;
             for (auto i = 0; i < 3; ++i)
                 transformed[idx][i] = rv[i];
+            transformed[idx][3] = 0;
         }
         else
             for (auto i = 0; i < 4; ++i)
@@ -136,6 +137,7 @@ std::vector<vector4f> Frame::rotatePoints2(
             auto rv = rotation * points[idx];
             for (auto i = 0; i < 3; ++i)
                 transformed[idx][i] = rv[i];
+            transformed[idx][3] = 0;
         }
         else
             for (auto i = 0; i < 4; ++i)

@@ -31,7 +31,7 @@ vector4f getTranslation(
     t[0] = mat(0, 3);
     t[1] = mat(1, 3);
     t[2] = mat(2, 3);
-    t[3] = 1;
+    t[3] = 0;
     return t;
 }
 
@@ -42,7 +42,7 @@ inline vector4f convertToArray(
     rv[0] = v[0];
     rv[1] = v[1];
     rv[2] = v[2];
-    rv[3] = 1;
+    rv[3] = 0;
     return rv;
 }
 
@@ -202,11 +202,15 @@ void ICP::findIndicesOfCorrespondingPoints2(
 
                     size_t kk = y * curFrame.getFrameWidth() + x;
 
-#if 0
+#if 1
                     vector4f zero = {};
                     auto cv = r * curVertex[kk] + t;
                     auto cn = r * curNormal[kk];
                     output_vertex[kk] = cv;
+
+                    if (curVertex[kk][0] != MINF && curNormal[kk][0] != MINF)
+                        if ((cv - pv).squaredNorm() < distanceThreshold * distanceThreshold)
+                            ++cnt;
 #else
                     Eigen::Vector3f curFramePointGlobal = rotation * curFrameVertexMapGlobal[kk] + translation;
                     Eigen::Vector3f curFrameNormalGlobal = rotation * curFrameNormalMapGlobal[kk];
@@ -216,11 +220,15 @@ void ICP::findIndicesOfCorrespondingPoints2(
                     output_normal[k][0] = curFrameNormalGlobal(0);
                     output_normal[k][1] = curFrameNormalGlobal(1);
                     output_normal[k][2] = curFrameNormalGlobal(2);
-#endif
 
                     if (curFramePointGlobal.allFinite() && curFrameNormalGlobal.allFinite())
+                    {
+                        auto a = curFramePointGlobal - prevVertex;
+                        auto b = a.norm();
                         if ((curFramePointGlobal - prevVertex).norm() < distanceThreshold && (std::abs(curFrameNormalGlobal.dot(prevNormal)) / curFrameNormalGlobal.norm() / prevNormal.norm() < normalThreshold))
                             ++cnt;
+                    }
+#endif
                 }
             }
         }
@@ -254,7 +262,7 @@ void ICP::findIndicesOfCorrespondingPoints2(
     auto duration4 = std::chrono::duration_cast<std::chrono::microseconds>(time4 - time3);
     std::cout << "### ICP2 duration #1: " << duration1.count() << " us" << std::endl;
     std::cout << "### ICP2 duration #2: " << duration2.count() << " us" << std::endl;
-    std::cout << "### ICP2 duration #3: " << duration3.count() << " us" << std::endl;
+    // std::cout << "### ICP2 duration #3: " << duration3.count() << " us" << std::endl;
     // std::cout << "### ICP2 duration #4: " << duration4.count() << " us, pixel copied = " << cnt << std::endl;
     std::cout << "### ICP2 cnt: " << cnt << std::endl;
 }
