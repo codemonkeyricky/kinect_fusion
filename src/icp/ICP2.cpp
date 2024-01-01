@@ -120,13 +120,7 @@ inline vector4f mask_apply(const vector4f &input, const vector4f &mask)
     return rv;
 }
 
-//#include <rsvd/Constants.hpp>
-//#include <rsvd/ErrorEstimators.hpp>
-//#include <rsvd/RandomizedSvd.hpp>
-
 vector4f output[640 * 480];
-vector4f output_vertex[640 * 480];
-vector4f output_normal[640 * 480];
 
 std::vector<int> pp;
 
@@ -139,7 +133,7 @@ std::vector<int> pp;
 // previous frame Simple version: only take euclidean distance between
 // points into consideration without normals Advanced version: Euclidean
 // distance between points + difference in normal angles
-__attribute__((optimize("O0")))
+// __attribute__((optimize("O0")))
 void ICP::findIndicesOfCorrespondingPoints2(
     const Eigen::Matrix4f &estPose)
 {
@@ -190,12 +184,6 @@ void ICP::findIndicesOfCorrespondingPoints2(
         // const auto rotation = estimatedPose.block(0, 0, 3, 3);
         // const auto translation = estimatedPose.block(0, 3, 3, 1);
 
-        const std::vector<Eigen::Vector3f> &curFrameVertexMapGlobal = curFrame.getVertexMapGlobal();
-        const std::vector<Eigen::Vector3f> &curFrameNormalMapGlobal = curFrame.getNormalMapGlobal();
-
-        const std::vector<Eigen::Vector3f> &prevFrameVertexMapGlobal = prevFrame.getVertexMapGlobal();
-        const std::vector<Eigen::Vector3f> &prevFrameNormalMapGlobal = prevFrame.getNormalMapGlobal();
-
         const std::vector<vector4f> &curVertex = curFrame.getVertexMapGlobal_vector4f();
         const std::vector<vector4f> &curNormal = curFrame.getNormalMapGlobal_vector4f();
 
@@ -211,38 +199,26 @@ void ICP::findIndicesOfCorrespondingPoints2(
                 auto x = coord[0], y = coord[1];
                 if (x >= 0 && x < 640 && y >= 0 && y < 480)
                 {
-                    Eigen::Vector3f prevVertex = prevFrameVertexMapGlobal[k];
-                    Eigen::Vector3f prevNormal = prevFrameNormalMapGlobal[k];
-
-                    size_t kk = y * curFrame.getFrameWidth() + x;
-
-#if 1
-                    vector4f zero = {};
+                    size_t kk = y * 640 + x;
                     auto cv = rotation * curVertex[kk] + translation;
                     auto cn = rotation * curNormal[kk];
-                    output_vertex[kk] = cv;
+                    // output_vertex[kk] = cv + cn;
 
+                    // vector4f invert = {-1, -1, -1, -1};
+                    auto npv = pv * -1.0f;
+                    // float sum = 0;
+                    // for (auto i = 0; i < 4; ++i)
+                    //     sum = diff[i] * diff[i];
+                    // // output[k][0] = diff.squaredNorm();
+                    // output[k][0] = diff[0] * diff[0] + ;
+                    // output[k][1] = diff[1];
+                    // output[k][2] = diff[2];
+                    // output[k][3] = diff[3];
                     if (curVertex[kk][0] != MINF && curNormal[kk][0] != MINF)
-                        if ((cv - pv).squaredNorm() < distanceThreshold * distanceThreshold)
+                        if ((cv + npv).squaredNorm() < distanceThreshold * distanceThreshold)
+                        // if ((cv + npv)[2] < distanceThreshold * distanceThreshold && (cv + npv)[0] < distanceThreshold * distanceThreshold)
                             ++cnt;
-#else
-                    Eigen::Vector3f curFramePointGlobal = rotation * curFrameVertexMapGlobal[kk] + translation;
-                    Eigen::Vector3f curFrameNormalGlobal = rotation * curFrameNormalMapGlobal[kk];
-                    output_vertex[k][0] = curFramePointGlobal(0);
-                    output_vertex[k][1] = curFramePointGlobal(1);
-                    output_vertex[k][2] = curFramePointGlobal(2);
-                    output_normal[k][0] = curFrameNormalGlobal(0);
-                    output_normal[k][1] = curFrameNormalGlobal(1);
-                    output_normal[k][2] = curFrameNormalGlobal(2);
 
-                    if (curFramePointGlobal.allFinite() && curFrameNormalGlobal.allFinite())
-                    {
-                        auto a = curFramePointGlobal - prevVertex;
-                        auto b = a.norm();
-                        if ((curFramePointGlobal - prevVertex).norm() < distanceThreshold && (std::abs(curFrameNormalGlobal.dot(prevNormal)) / curFrameNormalGlobal.norm() / prevNormal.norm() < normalThreshold))
-                            ++cnt;
-                    }
-#endif
                 }
             }
         }
@@ -251,17 +227,20 @@ void ICP::findIndicesOfCorrespondingPoints2(
     auto time2 = std::chrono::high_resolution_clock::now();
 
     for (size_t k = 0; k < prevVertex.size(); k++)
-        output[k] = prevVertex[k];
+    {
+        if (output[k][0] < distanceThreshold * distanceThreshold)
+            ++cnt;
+    }
+
+    // auto time3 = std::chrono::high_resolution_clock::now();
+
+    // // warm loop
+    // // cnt = 0;
+    // // for (size_t i = 0; i < 640 * 480 / 1024 / 4; i++)
+    // //     for (size_t k = 0; k < 1024 * 4; k++)
+    // //         output[k] = prevVertex[k], ++cnt;
 
     auto time3 = std::chrono::high_resolution_clock::now();
-
-    // warm loop
-    // cnt = 0;
-    // for (size_t i = 0; i < 640 * 480 / 1024 / 4; i++)
-    //     for (size_t k = 0; k < 1024 * 4; k++)
-    //         output[k] = prevVertex[k], ++cnt;
-
-    time3 = std::chrono::high_resolution_clock::now();
 
     // cnt = 0;
     // for (size_t i = 0; i < 640 * 480 / 32; i++)
@@ -276,7 +255,7 @@ void ICP::findIndicesOfCorrespondingPoints2(
     auto duration4 = std::chrono::duration_cast<std::chrono::microseconds>(time4 - time3);
     std::cout << "### ICP2 duration #1: " << duration1.count() << " us" << std::endl;
     std::cout << "### ICP2 duration #2: " << duration2.count() << " us" << std::endl;
-    // std::cout << "### ICP2 duration #3: " << duration3.count() << " us" << std::endl;
+    std::cout << "### ICP2 duration #3: " << duration3.count() << " us" << std::endl;
     // std::cout << "### ICP2 duration #4: " << duration4.count() << " us, pixel copied = " << cnt << std::endl;
     std::cout << "### ICP2 cnt: " << cnt << std::endl;
 }

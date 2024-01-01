@@ -22,7 +22,7 @@ ICP::ICP(Frame &_prevFrame, Frame &_curFrame, const double distanceThreshold,
 
 extern std::vector<int> pp;
 
-__attribute__((optimize("O0")))
+// __attribute__((optimize("O0")))
 Matrix4f ICP::estimatePose(
     Eigen::Matrix4f &estimatedPose,
     int iterationsNum)
@@ -32,8 +32,8 @@ Matrix4f ICP::estimatePose(
 
     for (size_t iteration = 0; iteration < iterationsNum; iteration++)
     {
-        // findIndicesOfCorrespondingPoints2(estimatedPose);
         const std::vector<std::pair<size_t, size_t>> correspondenceIds = findIndicesOfCorrespondingPoints(estimatedPose);
+        findIndicesOfCorrespondingPoints2(estimatedPose);
 
         std::cout << "# corresponding points: " << correspondenceIds.size()
                   << std::endl;
@@ -173,7 +173,7 @@ static std::array<float, 4> rotate_translate(
 // previous frame Simple version: only take euclidean distance between
 // points into consideration without normals Advanced version: Euclidean
 // distance between points + difference in normal angles
-__attribute__((optimize("O0"))) 
+// __attribute__((optimize("O0"))) 
 std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
     const Eigen::Matrix4f &estPose)
 {
@@ -193,6 +193,11 @@ std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
 
     const auto rotationInv = estimatedPoseInv.block(0, 0, 3, 3);
     const auto translationInv = estimatedPoseInv.block(0, 3, 3, 1);
+
+    float r_inv[9];
+    for (auto i = 0; i < 3; ++i)
+        for (auto j = 0; j < 3; ++j)
+            r_inv[i * 3 + j] = rotationInv(i, j);
 
     auto start = std::chrono::high_resolution_clock::now();
 
