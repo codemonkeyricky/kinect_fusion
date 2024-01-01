@@ -22,24 +22,18 @@ ICP::ICP(Frame &_prevFrame, Frame &_curFrame, const double distanceThreshold,
 
 extern std::vector<int> pp;
 
-// __attribute__((optimize("O0")))
+__attribute__((optimize("O0")))
 Matrix4f ICP::estimatePose(
     Eigen::Matrix4f &estimatedPose,
     int iterationsNum)
 {
 
     findIndicesOfCorrespondingPoints2(estimatedPose);
-    findIndicesOfCorrespondingPoints2(estimatedPose);
-    findIndicesOfCorrespondingPoints3(estimatedPose);
 
     for (size_t iteration = 0; iteration < iterationsNum; iteration++)
     {
+        // findIndicesOfCorrespondingPoints2(estimatedPose);
         const std::vector<std::pair<size_t, size_t>> correspondenceIds = findIndicesOfCorrespondingPoints(estimatedPose);
-
-        volatile int cnt = 0;
-        // for (auto k = 0; k < correspondenceIds.size(); ++k)
-        //     if (correspondenceIds[k].first != pp[k])
-        //         ++cnt;
 
         std::cout << "# corresponding points: " << correspondenceIds.size()
                   << std::endl;
@@ -179,7 +173,7 @@ static std::array<float, 4> rotate_translate(
 // previous frame Simple version: only take euclidean distance between
 // points into consideration without normals Advanced version: Euclidean
 // distance between points + difference in normal angles
-// __attribute__((optimize("O0"))) 
+__attribute__((optimize("O0"))) 
 std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
     const Eigen::Matrix4f &estPose)
 {

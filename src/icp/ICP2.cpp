@@ -139,28 +139,42 @@ std::vector<int> pp;
 // previous frame Simple version: only take euclidean distance between
 // points into consideration without normals Advanced version: Euclidean
 // distance between points + difference in normal angles
-// __attribute__((optimize("O0")))
+__attribute__((optimize("O0")))
 void ICP::findIndicesOfCorrespondingPoints2(
     const Eigen::Matrix4f &estPose)
 {
     auto time0 = std::chrono::high_resolution_clock::now();
 
     Eigen::Matrix4f estimatedPose = estPose;
+
+    auto rotation = getRotation(estimatedPose);
+    auto translation = getTranslation(estimatedPose);
+
     const auto estimatedPoseInv = estimatedPose.inverse();
 
-    const std::vector<vector4f> &prevVertex = prevFrame.getVertexMapGlobal_vector4f();
-    const std::vector<vector4f> &prevNormal = prevFrame.getNormalMapGlobal_vector4f();
+    const auto rotationInv = estimatedPoseInv.block(0, 0, 3, 3);
+    const auto translationInv = estimatedPoseInv.block(0, 3, 3, 1);
 
-    auto r = getRotation(estimatedPoseInv);
-    auto t = getTranslation(estimatedPoseInv);
+    matrix4f rotation_inv = {}; 
+    for (auto i = 0; i < 3; ++i)
+        for (auto j = 0; j < 3; ++j)
+            rotation_inv[i][j] = rotationInv(i, j);
+    
+    vector4f translation_inv = {};
+    for (auto i = 0; i < 3; ++i)
+        translation_inv[i] = translationInv(i, 0);
+
     auto ex = curFrame.getExtrinsicMatrix();
     auto ex_r = getRotation(ex);
     auto ex_t = getTranslation(ex);
     auto in = convertToArray(curFrame.getIntrinsicMatrix());
 
+    const std::vector<vector4f> &prevVertex = prevFrame.getVertexMapGlobal_vector4f();
+    const std::vector<vector4f> &prevNormal = prevFrame.getNormalMapGlobal_vector4f();
+
     for (size_t k = 0; k < prevVertex.size(); k++)
     {
-        auto curr_camera = r * prevVertex[k] + t;
+        auto curr_camera = rotation_inv * prevVertex[k] + translation_inv;
         auto curr_frame = ex_r * curr_camera + ex_t;
         auto img_coord = in * curr_frame;
         for (int i = 0; i < 4; ++i)
@@ -173,8 +187,8 @@ void ICP::findIndicesOfCorrespondingPoints2(
     auto time1 = std::chrono::high_resolution_clock::now();
 
     {
-        const auto rotation = estimatedPose.block(0, 0, 3, 3);
-        const auto translation = estimatedPose.block(0, 3, 3, 1);
+        // const auto rotation = estimatedPose.block(0, 0, 3, 3);
+        // const auto translation = estimatedPose.block(0, 3, 3, 1);
 
         const std::vector<Eigen::Vector3f> &curFrameVertexMapGlobal = curFrame.getVertexMapGlobal();
         const std::vector<Eigen::Vector3f> &curFrameNormalMapGlobal = curFrame.getNormalMapGlobal();
@@ -204,8 +218,8 @@ void ICP::findIndicesOfCorrespondingPoints2(
 
 #if 1
                     vector4f zero = {};
-                    auto cv = r * curVertex[kk] + t;
-                    auto cn = r * curNormal[kk];
+                    auto cv = rotation * curVertex[kk] + translation;
+                    auto cn = rotation * curNormal[kk];
                     output_vertex[kk] = cv;
 
                     if (curVertex[kk][0] != MINF && curNormal[kk][0] != MINF)
