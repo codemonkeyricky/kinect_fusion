@@ -27,6 +27,8 @@ cc_binary(
         "src/helpers/VirtualSensor.h",
         "src/helpers/FreeImageHelper.h",
         "src/helpers/FreeImageHelper.cpp",
+        "src/helpers/matrix.h",
+        "src/helpers/matrix.cpp",
         ],
     deps = [
         "@eigen"

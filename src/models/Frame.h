@@ -6,25 +6,11 @@
 #define FRAME_H
 
 #include <vector>
+#include <memory>
 
 #include "Eigen.h"
 #include "VirtualSensor.h"
-#include <memory>
-
-
-struct alignas(16) vector4f 
-{
-    std::array<float, 4> data;
-    float operator [](int i) const {return data[i];}
-    float & operator [](int i) {return data[i];}
-}; 
-
-struct alignas(16) matrix4f
-{
-    std::array<vector4f, 4> data;
-    vector4f operator [](int i) const {return data[i];}
-    vector4f & operator [](int i) {return data[i];}
-};
+#include "matrix.h"
 
 class Frame {
     friend class RayCaster;
