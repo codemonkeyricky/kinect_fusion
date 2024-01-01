@@ -199,14 +199,17 @@ void ICP::findIndicesOfCorrespondingPoints2(
         // get_valid_mask(prevVertex[k], vertex_valid);
         // get_valid_mask(prevNormal[k], normal_valid);
 
-        // Transform to global coordinate 
-        auto curr_camera = rotate_translate(prevVertex[k], r, t);
+        // Transform to global coordinate
+        // auto curr_camera = rotate_translate(prevVertex[k], r, t);
+        auto curr_camera = r * prevVertex[k] + t;
 
         // Project to current camera frame
-        auto curr_frame = rotate_translate(curr_camera, ex_r, ex_t);
+        auto curr_frame = ex_r * curr_camera + ex_t;
 
         // Project to image plane
-        auto img_coord = rotate_normalize(curr_frame, in);
+        auto img_coord = in * curr_frame;
+        for (int i = 0; i < 4; ++i)
+            img_coord[i] /= img_coord[2];
 
         // Range check
         // auto in_range_valid = is_coord_in_range(img_coord);
