@@ -202,20 +202,9 @@ void ICP::findIndicesOfCorrespondingPoints2(
                     size_t kk = y * 640 + x;
                     auto cv = rotation * curVertex[kk] + translation;
                     auto cn = rotation * curNormal[kk];
-                    // output_vertex[kk] = cv + cn;
-
-                    // vector4f invert = {-1, -1, -1, -1};
-                    auto npv = pv * -1.0f;
-                    // float sum = 0;
-                    // for (auto i = 0; i < 4; ++i)
-                    //     sum = diff[i] * diff[i];
-                    // // output[k][0] = diff.squaredNorm();
-                    // output[k][0] = diff[0] * diff[0] + ;
-                    // output[k][1] = diff[1];
-                    // output[k][2] = diff[2];
-                    // output[k][3] = diff[3];
                     if (curVertex[kk][0] != MINF && curNormal[kk][0] != MINF)
-                        if ((cv + npv).squaredNorm() < distanceThreshold * distanceThreshold)
+                        // Note: cv + pv * -1.0f is much faster than cv - pv. Not sure why.
+                        if ((cv + pv * -1.0f).squaredNorm() < distanceThreshold * distanceThreshold)
                         // if ((cv + npv)[2] < distanceThreshold * distanceThreshold && (cv + npv)[0] < distanceThreshold * distanceThreshold)
                             ++cnt;
 
@@ -226,26 +215,7 @@ void ICP::findIndicesOfCorrespondingPoints2(
 
     auto time2 = std::chrono::high_resolution_clock::now();
 
-    for (size_t k = 0; k < prevVertex.size(); k++)
-    {
-        if (output[k][0] < distanceThreshold * distanceThreshold)
-            ++cnt;
-    }
-
-    // auto time3 = std::chrono::high_resolution_clock::now();
-
-    // // warm loop
-    // // cnt = 0;
-    // // for (size_t i = 0; i < 640 * 480 / 1024 / 4; i++)
-    // //     for (size_t k = 0; k < 1024 * 4; k++)
-    // //         output[k] = prevVertex[k], ++cnt;
-
     auto time3 = std::chrono::high_resolution_clock::now();
-
-    // cnt = 0;
-    // for (size_t i = 0; i < 640 * 480 / 32; i++)
-    //     for (size_t k = 0; k < 32; k++)
-    //         output[k] = prevVertex[k], ++cnt;
 
     auto time4 = std::chrono::high_resolution_clock::now();
 
