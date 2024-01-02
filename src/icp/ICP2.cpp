@@ -205,8 +205,9 @@ void ICP::findIndicesOfCorrespondingPoints2(
                     if (curVertex[kk][0] != MINF && curNormal[kk][0] != MINF)
                         // Note: cv + pv * -1.0f is much faster than cv - pv. Not sure why.
                         if ((cv + pv * -1.0f).squaredNorm() < distanceThreshold * distanceThreshold)
-                        // if ((cv + npv)[2] < distanceThreshold * distanceThreshold && (cv + npv)[0] < distanceThreshold * distanceThreshold)
-                            ++cnt;
+                            // if (std::abs(curFrameNormalGlobal.dot(prevNormal)) / curFrameNormalGlobal.norm() / prevNormal.norm() < normalThreshold))
+                            if (std::abs(cv.dot(pn)) / cv.norm() / pn.norm() < normalThreshold)
+                                ++cnt;
 
                 }
             }
