@@ -135,7 +135,8 @@ std::vector<int> pp;
 // distance between points + difference in normal angles
 // __attribute__((optimize("O0")))
 void ICP::findIndicesOfCorrespondingPoints2(
-    const Eigen::Matrix4f &estPose)
+    const Eigen::Matrix4f &estPose,
+    std::vector<std::pair<size_t, size_t>> &correspondenceIds)
 {
     auto time0 = std::chrono::high_resolution_clock::now();
 
@@ -207,8 +208,7 @@ void ICP::findIndicesOfCorrespondingPoints2(
                         if ((cv + pv * -1.0f).squaredNorm() < distanceThreshold * distanceThreshold)
                             // if (std::abs(curFrameNormalGlobal.dot(prevNormal)) / curFrameNormalGlobal.norm() / prevNormal.norm() < normalThreshold))
                             if (std::abs(cv.dot(pn)) / cv.norm() / pn.norm() < normalThreshold)
-                                ++cnt;
-
+                                ++cnt, correspondenceIds.push_back({k, kk});
                 }
             }
         }

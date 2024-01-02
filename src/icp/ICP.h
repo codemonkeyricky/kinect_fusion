@@ -26,7 +26,8 @@ public:
         const Eigen::Matrix4f &estimatedPose);
 
     void findIndicesOfCorrespondingPoints2(
-        const Eigen::Matrix4f &estimatedPose);
+        const Eigen::Matrix4f &estimatedPose,
+        std::vector<std::pair<size_t, size_t>> &correspondenceIds);
 
     std::vector<std::pair<size_t, size_t>> findIndicesOfCorrespondingPoints3(
         const Eigen::Matrix4f &estPose);

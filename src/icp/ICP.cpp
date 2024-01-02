@@ -22,18 +22,23 @@ ICP::ICP(Frame &_prevFrame, Frame &_curFrame, const double distanceThreshold,
 
 extern std::vector<int> pp;
 
+std::vector<std::pair<size_t, size_t>> correspondenceIds;
+
 // __attribute__((optimize("O0")))
 Matrix4f ICP::estimatePose(
     Eigen::Matrix4f &estimatedPose,
     int iterationsNum)
 {
-
-    findIndicesOfCorrespondingPoints2(estimatedPose);
+    correspondenceIds.reserve(640 * 480);
 
     for (size_t iteration = 0; iteration < iterationsNum; iteration++)
     {
-        const std::vector<std::pair<size_t, size_t>> correspondenceIds = findIndicesOfCorrespondingPoints(estimatedPose);
-        findIndicesOfCorrespondingPoints2(estimatedPose);
+        // Custom
+        correspondenceIds.clear();
+        findIndicesOfCorrespondingPoints2(estimatedPose, correspondenceIds);
+
+        // Reference
+        correspondenceIds = findIndicesOfCorrespondingPoints(estimatedPose);
 
         std::cout << "# corresponding points: " << correspondenceIds.size()
                   << std::endl;
@@ -165,6 +170,8 @@ static std::array<float, 4> rotate_translate(
     return rv;
 }
 
+std::vector<std::pair<size_t, size_t>> indicesOfCorrespondingPoints;
+
 // Helper method to find corresponding points between curent frame and
 // previous frame Reference Paper:
 // https://www.cvl.iis.u-tokyo.ac.jp/~oishi/Papers/Alignment/Blais_Registering_multiview_PAMI1995.pdf
@@ -178,7 +185,6 @@ std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
     const Eigen::Matrix4f &estPose)
 {
     Eigen::Matrix4f estimatedPose = estPose;
-    std::vector<std::pair<size_t, size_t>> indicesOfCorrespondingPoints;
 
     const std::vector<Eigen::Vector3f> &prevFrameVertexMapGlobal = prevFrame.getVertexMapGlobal();
     const std::vector<Eigen::Vector3f> &prevFrameNormalMapGlobal = prevFrame.getNormalMapGlobal();
@@ -241,6 +247,7 @@ std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
     std::cout << "### ICP duration: " << duration.count() << std::endl;
+    std::cout << "### ICP cnt: " << indicesOfCorrespondingPoints.size() << std::endl;
 
     return indicesOfCorrespondingPoints;
 }
