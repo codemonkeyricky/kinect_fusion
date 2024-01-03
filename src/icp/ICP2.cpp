@@ -133,6 +133,89 @@ std::vector<int> pp;
 // previous frame Simple version: only take euclidean distance between
 // points into consideration without normals Advanced version: Euclidean
 // distance between points + difference in normal angles
+// __attribute__((optimize("O0"))) 
+std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
+    const Eigen::Matrix4f &estPose)
+{
+    std::vector<std::pair<size_t, size_t>> indicesOfCorrespondingPoints;
+
+    Eigen::Matrix4f estimatedPose = estPose;
+
+    const std::vector<Eigen::Vector3f> &prevFrameVertexMapGlobal = prevFrame.getVertexMapGlobal();
+    const std::vector<Eigen::Vector3f> &prevFrameNormalMapGlobal = prevFrame.getNormalMapGlobal();
+
+    const std::vector<Eigen::Vector3f> &curFrameVertexMapGlobal = curFrame.getVertexMapGlobal();
+    const std::vector<Eigen::Vector3f> &curFrameNormalMapGlobal = curFrame.getNormalMapGlobal();
+
+    const auto rotation = estimatedPose.block(0, 0, 3, 3);
+    const auto translation = estimatedPose.block(0, 3, 3, 1);
+
+    const auto estimatedPoseInv = estimatedPose.inverse();
+
+    const auto rotationInv = estimatedPoseInv.block(0, 0, 3, 3);
+    const auto translationInv = estimatedPoseInv.block(0, 3, 3, 1);
+
+    float r_inv[9];
+    for (auto i = 0; i < 3; ++i)
+        for (auto j = 0; j < 3; ++j)
+            r_inv[i * 3 + j] = rotationInv(i, j);
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    // GPU implementation: use a separate thread for every run of the for
+    // loop
+    for (size_t idx = 0; idx < prevFrameVertexMapGlobal.size(); idx++)
+    {
+        Eigen::Vector3f prevVertex = prevFrameVertexMapGlobal[idx];
+        Eigen::Vector3f prevNormal = prevFrameNormalMapGlobal[idx];
+        // std::cout << "Curent Point (Camera): " << curPoint[0] << " " <<
+        // curPoint[1] << " " << curPoint[2] << std::endl;
+
+        if (prevVertex.allFinite() && prevNormal.allFinite())
+        {
+            Eigen::Vector3f prevPointCurCamera = rotationInv * prevVertex + translationInv;
+            // project point from global camera system into camera system of
+            // the current frame
+            const Eigen::Vector3f prevPointCurFrame = curFrame.projectPointIntoFrame(prevPointCurCamera);
+            // project point from camera system of the previous frame onto the
+            // image plane of the current frame
+            const Eigen::Vector2i prevPointImgCoordCurFrame = curFrame.projectOntoImgPlane(prevPointCurFrame);
+
+            if (curFrame.containsImgPoint(prevPointImgCoordCurFrame))
+            {
+                size_t curIdx =
+                    prevPointImgCoordCurFrame[1] * curFrame.getFrameWidth() +
+                    prevPointImgCoordCurFrame[0];
+
+                Eigen::Vector3f curFramePointGlobal = rotation * curFrameVertexMapGlobal[curIdx] + translation;
+                Eigen::Vector3f curFrameNormalGlobal = rotation * curFrameNormalMapGlobal[curIdx];
+
+                if (curFramePointGlobal.allFinite() &&
+                    (curFramePointGlobal - prevVertex).norm() < distanceThreshold && curFrameNormalGlobal.allFinite() && (std::abs(curFrameNormalGlobal.dot(prevNormal)) / curFrameNormalGlobal.norm() / prevNormal.norm() < normalThreshold))
+                {
+                    indicesOfCorrespondingPoints.push_back(std::make_pair(idx, curIdx));
+                }
+            }
+        }
+    }
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    std::cout << "### ICP duration: " << duration.count() << std::endl;
+    std::cout << "### ICP cnt: " << indicesOfCorrespondingPoints.size() << std::endl;
+
+    return indicesOfCorrespondingPoints;
+}
+
+
+// Helper method to find corresponding points between curent frame and
+// previous frame Reference Paper:
+// https://www.cvl.iis.u-tokyo.ac.jp/~oishi/Papers/Alignment/Blais_Registering_multiview_PAMI1995.pdf
+// Input: curent frame, previous frame, estimated pose of previous
+// frame Output: indices of corresponding vertices in curent and
+// previous frame Simple version: only take euclidean distance between
+// points into consideration without normals Advanced version: Euclidean
+// distance between points + difference in normal angles
 // __attribute__((optimize("O0")))
 void ICP::findIndicesOfCorrespondingPoints2(
     const Eigen::Matrix4f &estPose,

@@ -18,6 +18,9 @@ Frame::Frame(const Frame& other) {
     mNormalsGlobal = other.mNormalsGlobal;
     extrinsicMatrix = other.extrinsicMatrix;
     intrinsicMatrix = other.intrinsicMatrix;
+
+    mVerticesGlobal_vector4f = other.mVerticesGlobal_vector4f;
+    mNormalGlobal_vector4f = other.mNormalGlobal_vector4f;
 }
 
 Frame::Frame(const float* depthMap, const BYTE* colorMap,

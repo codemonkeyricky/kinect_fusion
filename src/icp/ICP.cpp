@@ -22,30 +22,40 @@ ICP::ICP(Frame &_prevFrame, Frame &_curFrame, const double distanceThreshold,
 
 extern std::vector<int> pp;
 
-std::vector<std::pair<size_t, size_t>> correspondenceIds;
+std::vector<std::pair<size_t, size_t>> points_custom;
 
 // __attribute__((optimize("O0")))
 Matrix4f ICP::estimatePose(
     Eigen::Matrix4f &estimatedPose,
     int iterationsNum)
 {
-    correspondenceIds.reserve(640 * 480);
+    points_custom.reserve(640 * 480);
 
     for (size_t iteration = 0; iteration < iterationsNum; iteration++)
     {
+        // auto points_ref = findIndicesOfCorrespondingPoints(estimatedPose);
+        
         // Custom
-        correspondenceIds.clear();
-        findIndicesOfCorrespondingPoints2(estimatedPose, correspondenceIds);
+        points_custom.clear();
+        findIndicesOfCorrespondingPoints2(estimatedPose, points_custom);
 
-        // Reference
-        correspondenceIds = findIndicesOfCorrespondingPoints(estimatedPose);
+        // // Reference
+        // swap(points_ref, points_custom);
+        auto points_ref = points_custom;
 
-        std::cout << "# corresponding points: " << correspondenceIds.size()
+        // for (auto i = 0; i < points_ref.size(); ++i)
+        //     if (points_custom[i] != points_ref[i])
+        //     {
+        //         std::cout << "### mismatch: " << points_custom[i].first << ", " << points_ref[i].first << std::endl;
+        //         assert(0);
+        //     }
+
+        std::cout << "# corresponding points: " << points_ref.size()
                   << std::endl;
         std::cout << "# total number of points: "
                   << curFrame.getVertexMap().size() << std::endl;
 
-        int nPoints = correspondenceIds.size();
+        int nPoints = points_ref.size();
         Eigen::Matrix3f rotationEP = estimatedPose.block(0, 0, 3, 3);
         Eigen::Vector3f translationEP = estimatedPose.block(0, 3, 3, 1);
 
@@ -54,7 +64,7 @@ Matrix4f ICP::estimatePose(
 
         for (size_t i = 0; i < nPoints; i++)
         {
-            auto pair = correspondenceIds[i];
+            auto pair = points_ref[i];
             const auto &x = rotationEP * curFrame.getVertexGlobal(pair.second) + translationEP;
             const auto &y = prevFrame.getVertexGlobal(pair.first);
             const auto &n = prevFrame.getNormalGlobal(pair.first);
@@ -94,6 +104,7 @@ Matrix4f ICP::estimatePose(
         curentPose.block<3, 3>(0, 0) = rotation;
         curentPose.block<3, 1>(0, 3) = translation;
         estimatedPose = curentPose * estimatedPose;
+        std::cout << "### estimatedPose : " << estimatedPose(0) << ", " << estimatedPose(1) << ", " << estimatedPose(2) << ", " << std::endl;
     }
     return estimatedPose;
 }
@@ -170,84 +181,3 @@ static std::array<float, 4> rotate_translate(
     return rv;
 }
 
-std::vector<std::pair<size_t, size_t>> indicesOfCorrespondingPoints;
-
-// Helper method to find corresponding points between curent frame and
-// previous frame Reference Paper:
-// https://www.cvl.iis.u-tokyo.ac.jp/~oishi/Papers/Alignment/Blais_Registering_multiview_PAMI1995.pdf
-// Input: curent frame, previous frame, estimated pose of previous
-// frame Output: indices of corresponding vertices in curent and
-// previous frame Simple version: only take euclidean distance between
-// points into consideration without normals Advanced version: Euclidean
-// distance between points + difference in normal angles
-// __attribute__((optimize("O0"))) 
-std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
-    const Eigen::Matrix4f &estPose)
-{
-    Eigen::Matrix4f estimatedPose = estPose;
-
-    const std::vector<Eigen::Vector3f> &prevFrameVertexMapGlobal = prevFrame.getVertexMapGlobal();
-    const std::vector<Eigen::Vector3f> &prevFrameNormalMapGlobal = prevFrame.getNormalMapGlobal();
-
-    const std::vector<Eigen::Vector3f> &curFrameVertexMapGlobal = curFrame.getVertexMapGlobal();
-    const std::vector<Eigen::Vector3f> &curFrameNormalMapGlobal = curFrame.getNormalMapGlobal();
-
-    const auto rotation = estimatedPose.block(0, 0, 3, 3);
-    const auto translation = estimatedPose.block(0, 3, 3, 1);
-
-    const auto estimatedPoseInv = estimatedPose.inverse();
-
-    const auto rotationInv = estimatedPoseInv.block(0, 0, 3, 3);
-    const auto translationInv = estimatedPoseInv.block(0, 3, 3, 1);
-
-    float r_inv[9];
-    for (auto i = 0; i < 3; ++i)
-        for (auto j = 0; j < 3; ++j)
-            r_inv[i * 3 + j] = rotationInv(i, j);
-
-    auto start = std::chrono::high_resolution_clock::now();
-
-    // GPU implementation: use a separate thread for every run of the for
-    // loop
-    for (size_t idx = 0; idx < prevFrameVertexMapGlobal.size(); idx++)
-    {
-        Eigen::Vector3f prevVertex = prevFrameVertexMapGlobal[idx];
-        Eigen::Vector3f prevNormal = prevFrameNormalMapGlobal[idx];
-        // std::cout << "Curent Point (Camera): " << curPoint[0] << " " <<
-        // curPoint[1] << " " << curPoint[2] << std::endl;
-
-        if (prevVertex.allFinite() && prevNormal.allFinite())
-        {
-            Eigen::Vector3f prevPointCurCamera = rotationInv * prevVertex + translationInv;
-            // project point from global camera system into camera system of
-            // the current frame
-            const Eigen::Vector3f prevPointCurFrame = curFrame.projectPointIntoFrame(prevPointCurCamera);
-            // project point from camera system of the previous frame onto the
-            // image plane of the current frame
-            const Eigen::Vector2i prevPointImgCoordCurFrame = curFrame.projectOntoImgPlane(prevPointCurFrame);
-
-            if (curFrame.containsImgPoint(prevPointImgCoordCurFrame))
-            {
-                size_t curIdx =
-                    prevPointImgCoordCurFrame[1] * curFrame.getFrameWidth() +
-                    prevPointImgCoordCurFrame[0];
-
-                Eigen::Vector3f curFramePointGlobal = rotation * curFrameVertexMapGlobal[curIdx] + translation;
-                Eigen::Vector3f curFrameNormalGlobal = rotation * curFrameNormalMapGlobal[curIdx];
-
-                if (curFramePointGlobal.allFinite() &&
-                    (curFramePointGlobal - prevVertex).norm() < distanceThreshold && curFrameNormalGlobal.allFinite() && (std::abs(curFrameNormalGlobal.dot(prevNormal)) / curFrameNormalGlobal.norm() / prevNormal.norm() < normalThreshold))
-                {
-                    indicesOfCorrespondingPoints.push_back(std::make_pair(idx, curIdx));
-                }
-            }
-        }
-    }
-
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-    std::cout << "### ICP duration: " << duration.count() << std::endl;
-    std::cout << "### ICP cnt: " << indicesOfCorrespondingPoints.size() << std::endl;
-
-    return indicesOfCorrespondingPoints;
-}
