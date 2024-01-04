@@ -207,6 +207,7 @@ std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
     return indicesOfCorrespondingPoints;
 }
 
+std::pair<int, int> array[640 * 480];
 
 // Helper method to find corresponding points between curent frame and
 // previous frame Reference Paper:
@@ -250,6 +251,8 @@ void ICP::findIndicesOfCorrespondingPoints2(
     const std::vector<vector4f> &prevVertex = prevFrame.getVertexMapGlobal_vector4f();
     const std::vector<vector4f> &prevNormal = prevFrame.getNormalMapGlobal_vector4f();
 
+    correspondenceIds.resize(640 * 480);
+
     for (size_t k = 0; k < prevVertex.size(); k++)
     {
         auto curr_camera = rotation_inv * prevVertex[k] + translation_inv;
@@ -288,10 +291,10 @@ void ICP::findIndicesOfCorrespondingPoints2(
                     auto cn = rotation * curNormal[kk];
                     if (curVertex[kk][0] != MINF && curNormal[kk][0] != MINF)
                         // Note: cv + pv * -1.0f is much faster than cv - pv. Not sure why.
-                        if ((cv + pv * -1.0f).squaredNorm() < distanceThreshold * distanceThreshold)
+                        if ((cv - pv).squaredNorm() < distanceThreshold * distanceThreshold)
                             // if (std::abs(curFrameNormalGlobal.dot(prevNormal)) / curFrameNormalGlobal.norm() / prevNormal.norm() < normalThreshold))
                             if (std::abs(cv.dot(pn)) / cv.norm() / pn.norm() < normalThreshold)
-                                ++cnt, correspondenceIds.push_back({k, kk});
+                               correspondenceIds[cnt++] = {k, kk}; //  ++cnt; // , correspondenceIds.push_back({k, kk});
                 }
             }
         }
@@ -312,6 +315,8 @@ void ICP::findIndicesOfCorrespondingPoints2(
     std::cout << "### ICP2 duration #3: " << duration3.count() << " us" << std::endl;
     // std::cout << "### ICP2 duration #4: " << duration4.count() << " us, pixel copied = " << cnt << std::endl;
     std::cout << "### ICP2 cnt: " << cnt << std::endl;
+
+    correspondenceIds.resize(cnt);
 }
 
 std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints3(
