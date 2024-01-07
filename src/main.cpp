@@ -20,14 +20,22 @@
 #define MAX_FRAME_NUM 800
 #define MIN_POINT -1.5f, -1.0f, -0.1f
 #define MAX_POINT 1.5f, 1.0f, 3.5f
-#define RESOLUTION 512, 512, 512
+#define RESOLUTION 128, 128, 128
+// #define RESOLUTION 256, 256, 256
+// #define RESOLUTION 512, 512, 512
+// #define RESOLUTION 1024, 1024, 1024
 #define ICP_ITERATIONS 20
 
 int main() {
   // Make sure this path points to the data folder
-    std::string filenameIn = "../data/rgbd_dataset_freiburg1_xyz/";
-    std::string filenameBaseOut = std::string("../output/mesh_");
-    std::string filenameBaseOutMC = std::string("../output/MCmesh_");
+    // std::string filenameIn = "data/rgbd_dataset_freiburg1_xyz/";
+    // std::string filenameIn = "../data/rgbd_dataset_freiburg2_xyz/";
+    // std::string filenameIn = "../data/rgbd_dataset_freiburg1_desk/";
+    // std::string filenameIn = "data/rgbd_dataset_freiburg1_desk2/";
+    // std::string filenameIn = "data/rgbd_dataset_freiburg1_floor/";
+    std::string filenameIn = "data/rgbd_dataset_freiburg1_rpy/";
+    std::string filenameBaseOut = std::string("output/mesh_");
+    std::string filenameBaseOutMC = std::string("output/MCmesh_");
 
   // load video
   std::cout << "Initialize virtual sensor..." << std::endl;
@@ -77,6 +85,9 @@ int main() {
           ICP icp(prevFrame, curFrame, DISTANCE_THRESHOLD, ANGLE_THRESHOLD);
           // std::vector<std::pair<size_t, size_t>> correspondenceIds(
           //     {{302990, 302990}});
+
+        //   icp.findIndicesOfCorrespondingPoints2(pose); 
+        //   icp.findIndicesOfCorrespondingPoints2(pose); 
 
           pose = icp.estimatePose(pose, ICP_ITERATIONS);
           std::cout << pose << std::endl;

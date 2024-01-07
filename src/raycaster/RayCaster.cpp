@@ -207,11 +207,25 @@ Frame& RayCaster::rayCast() {
 		}			
 	}
 
+	// TODO: update _vector4f variants too
+
 	frame.mVerticesGlobal = output_vertices_global;
+
+	for (auto k = 0; k < 640 * 480; ++k)
+		for (auto i = 0; i < 3; ++i)
+			(*frame.mVerticesGlobal_vector4f)[k][i] = (*frame.mVerticesGlobal)[k](i);
+
+	// std::shared_ptr<std::vector<vector4f>> mVerticesGlobal_vector4f;
+    // std::shared_ptr<std::vector<vector4f>> mNormalGlobal_vector4f;
+
 	//frame.mNormalsGlobal = output_normals_global;
 	frame.mVertices = std::make_shared<std::vector<Vector3f>>(frame.transformPoints(*output_vertices_global, worldToCamera));
 	frame.computeNormalMap(width, height);
 	frame.mNormalsGlobal = std::make_shared<std::vector<Vector3f>>(frame.rotatePoints(frame.getNormalMap(), rotationMatrix));
+
+	for (auto k = 0; k < 640 * 480; ++k)
+		for (auto i = 0; i < 3; ++i)
+			(*frame.mNormalGlobal_vector4f)[k][i] = (*frame.mNormalsGlobal)[k](i);
 
 	std::cout << "RayCast done!" << std::endl;
 

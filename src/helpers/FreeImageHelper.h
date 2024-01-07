@@ -3,6 +3,7 @@
 #undef min
 #undef max
 
+#include <limits>
 #include <string>
 #include <algorithm>
 

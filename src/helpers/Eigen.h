@@ -29,7 +29,7 @@
 #include <Eigen/Dense>
 #include <Eigen/StdVector>
 #include <Eigen/Eigenvalues>
-#include <unsupported/Eigen/NonLinearOptimization>
+// #include <external/unsupported/Eigen/NonLinearOptimization>
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
 
