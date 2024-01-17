@@ -16,13 +16,16 @@ void RayCaster::changeVolume(Volume& vol_) {
 
 // a function that writes down the invalid results
 void mistake(
-	std::vector<Vector3f>& ovg, std::vector<Vector3f>& ong
-) {
+	std::vector<Vector3f> &ovg, std::vector<Vector3f> &ong)
+{
 	ovg.emplace_back(Vector3f(MINF, MINF, MINF));
 	ong.emplace_back(Vector3f(MINF, MINF, MINF));
 }
 
-Frame& RayCaster::rayCast() {
+__attribute__((optimize("O0")))
+Frame &
+RayCaster::rayCast()
+{
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
 	const Matrix4f cameraToWorld = worldToCamera.inverse();
 	const Matrix3f intrinsic_inverse = frame.getIntrinsicMatrix().inverse();
@@ -32,7 +35,7 @@ Frame& RayCaster::rayCast() {
 
 	int width = frame.getFrameWidth();
 	int height = frame.getFrameHeight();
-;
+
 	Vector3f ray_start, ray_dir, ray_current, ray_previous, ray_next;
 	Vector3i ray_current_int, ray_previous_int;
 
@@ -49,10 +52,13 @@ Frame& RayCaster::rayCast() {
 	uint index;
 
 	std::cout << "RayCast starting..." << std::endl;
+	int cnt = 0;
 
-	for (int i = 0; i < height; i++) {
-		for (int j = 0; j < width; j++) {
-			//std::cout << i << " " << j << std::endl;
+	for (int i = 0; i < height; i++)
+	{
+		for (int j = 0; j < width; j++)
+		{
+			// std::cout << i << " " << j << std::endl;
 
 			// starting point is the position of the camera (translation) in grid coordinates
 			ray_start = vol.worldToGrid(translation);
@@ -63,8 +69,7 @@ Frame& RayCaster::rayCast() {
 				frame.colorMap[4 * index + 0],
 				frame.colorMap[4 * index + 1],
 				frame.colorMap[4 * index + 2],
-				frame.colorMap[4 * index + 3] 
-			};
+				frame.colorMap[4 * index + 3]};
 			/*
 			ray_dir = Vector3f{ float(j), float(i), 1.0f };
 			ray_dir = intrinsic_inverse * ray_dir;
@@ -73,15 +78,16 @@ Frame& RayCaster::rayCast() {
 			*/
 			//ray_next = vol.worldToGrid(frame.getVertexGlobal(index));
 
-			ray_next = Vector3f{ float(j), float(i), 1.0f };
+			ray_next = Vector3f{float(j), float(i), 1.0f};
 			ray_next = intrinsic_inverse * ray_next;
 			ray_next = rotationMatrix * ray_next + translation;
 			ray_next = vol.worldToGrid(ray_next);
-			
+
 			ray_dir = ray_next - ray_start;
 			ray_dir = ray_dir.normalized();
-			
-			if (!ray_dir.allFinite() || ray_dir == Vector3f{ 0.0f, 0.0f, 0.0f }) {
+
+			if (!ray_dir.allFinite() || ray_dir == Vector3f{0.0f, 0.0f, 0.0f})
+			{
 				mistake(*output_vertices_global, *output_normals_global);
 				continue;
 			}
@@ -91,30 +97,33 @@ Frame& RayCaster::rayCast() {
 			ray_current = ray_start;
 			ray_current_int = Volume::intCoords(ray_current);
 
-			if (!vol.isPointInVolume(ray_current)) {
+			if (!vol.isPointInVolume(ray_current))
+			{
 				mistake(*output_vertices_global, *output_normals_global);
 				continue;
 			}
 
-			while (true) {//vol.isPointInVolume(ray_current)) {
+			while (true)
+			{ // vol.isPointInVolume(ray_current)) {
 				ray_previous = ray_current;
 				ray_previous_int = ray_current_int;
 
-				do {
-					//std::cout << ray_current << std::endl;
+				do
+				{
+					// std::cout << ray_current << std::endl;
 
 					ray_current = ray.next();
 					ray_current_int = Volume::intCoords(ray_current);
 
 				} while (ray_previous_int == ray_current_int);
 
-					
 				if (!vol.isInterpolationPossible(ray_previous) || !vol.isInterpolationPossible(ray_current)) {
 					mistake(*output_vertices_global, *output_normals_global);
 					break;
-				} 
-				
-				else if (vol.get(ray_previous_int).getValue() == 0) {
+				}
+
+				else if (vol.get(ray_previous_int).getValue() == 0)
+				{
 					v = vol.gridToWorld(ray_previous);
 					//n = vol.calculateNormal(ray_previous);
 
@@ -135,7 +144,8 @@ Frame& RayCaster::rayCast() {
 					break;
 				}
 
-				else if (vol.get(ray_current_int).getValue() == 0){
+				else if (vol.get(ray_current_int).getValue() == 0)
+				{
 					v = vol.gridToWorld(ray_current);
 					//n = vol.calculateNormal(ray_current);
 					/*
@@ -154,13 +164,13 @@ Frame& RayCaster::rayCast() {
 
 					break;
 				}
-				
+
 				else if (
-					vol.get(ray_previous_int).getValue() != std::numeric_limits<float>::max() && 
-					vol.get(ray_previous_int).getValue() > 0 &&  
+					vol.get(ray_previous_int).getValue() != std::numeric_limits<float>::max() &&
+					vol.get(ray_previous_int).getValue() > 0 &&
 					vol.get(ray_current_int).getValue() != std::numeric_limits<float>::max() &&
-					vol.get(ray_current_int).getValue() < 0
-				) {
+					vol.get(ray_current_int).getValue() < 0)
+				{
 					sdf_1 = vol.trilinearInterpolation(ray_previous);
 					sdf_2 = vol.trilinearInterpolation(ray_current);
 
@@ -201,11 +211,15 @@ Frame& RayCaster::rayCast() {
 					//else 
 					//	vol.updateColor(p, color, false);
 
+					++cnt;
+
 					break;
 				}
 			}
-		}			
+		}
 	}
+
+	std::cout << "### raycast cnt: " << cnt << std::endl;
 
 	// TODO: update _vector4f variants too
 

@@ -277,29 +277,27 @@ public:
 	void updateColor(Vector3f point, Vector4uc& color, bool notVisited);
 
 	//! Checks if the point in grid coordinates is in the volume
-	bool isPointInVolume(Vector3f& point) {
-		return
-			!(
-				point[0] > dx - 1 ||
-				point[1] > dy - 1 ||
-				point[2] > dz - 1 ||
-				point[0] < 0 ||
-				point[1] < 0 ||
-				point[2] < 0
-				);
+	bool isPointInVolume(Vector3f &point)
+	{
+		return !(
+			point[0] > dx - 1 ||
+			point[1] > dy - 1 ||
+			point[2] > dz - 1 ||
+			point[0] < 0 ||
+			point[1] < 0 ||
+			point[2] < 0);
 	}
 
 	//! Checks if the trilinear interpolation possible for a given point (we have to have 8 surrounding points)
-	bool isInterpolationPossible(Vector3f& point) {
-		return
-			!(
-				point[0] > dx - 3 ||
-				point[1] > dy - 3 ||
-				point[2] > dz - 3 ||
-				point[0] < 2 ||
-				point[1] < 2 ||
-				point[2] < 2
-				);
+	bool isInterpolationPossible(Vector3f &point)
+	{
+		return !(
+			point[0] > dx - 3 ||
+			point[1] > dy - 3 ||
+			point[2] > dz - 3 ||
+			point[0] < 2 ||
+			point[1] < 2 ||
+			point[2] < 2);
 	}
 
 private:
