@@ -19,37 +19,30 @@ bool initGL()
     bool success = true;
     GLenum error = GL_NO_ERROR;
 
-    // Initialize Projection Matrix
+    // // Initialize Projection Matrix
+    // glMatrixMode(GL_PROJECTION);
+    // glLoadIdentity();
+    // gluPerspective(60.0, 4.0 / 3.0, 1, 40);
+    // assert(GL_NO_ERROR == glGetError());
+
+    // // Initialize Modelview Matrix
+    // // glFrustum(-5, 5, -5, 5, 15, 150);
+    // glMatrixMode(GL_MODELVIEW);
+    // glLoadIdentity();
+    // gluLookAt(0, 0, 0.5, 0, 0, 0, 0, 1, 0);
+    // assert(GL_NO_ERROR == glGetError());
+
+    // // Initialize clear color
+    // glClearColor(0.f, 0.f, 0.f, 1.f);
+    // assert(GL_NO_ERROR == glGetError());
+
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
+    gluPerspective(60.0, 1920.0 / 1080.0, 1, 200);
 
-    // Check for error
-    error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        success = false;
-    }
-
-    // Initialize Modelview Matrix
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-
-    // Check for error
-    error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        success = false;
-    }
-
-    // Initialize clear color
-    glClearColor(0.f, 0.f, 0.f, 1.f);
-
-    // Check for error
-    error = glGetError();
-    if (error != GL_NO_ERROR)
-    {
-        success = false;
-    }
+    gluLookAt(0, -55.0, 50.0, 0, 0, 0, 0, 0, 1);
 
     return success;
 }
@@ -101,16 +94,40 @@ Renderer::Renderer()
     }
 }
 
-void Renderer::update()
+void Renderer::update(std::vector<Eigen::Vector3f> &vertices)
 {
     // Clear color buffer
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Render quad
-    if (1)
+    if (0)
     {
-        glRotatef(0.4f, 0.0f, 1.0f, 0.0f); // Rotate The cube around the Y axis
-        glRotatef(0.2f, 1.0f, 1.0f, 1.0f);
+
+        glColor3f(0, 1, 1);
+        glBegin(GL_LINES);
+        for (int i = 0; i <= 10; i++)
+        {
+            // horizontal
+            glVertex3f(-50.0f + i * 10.0f, -50.0f, 0.0f);
+            glVertex3f(-50.0f + i * 10.0f, 50.0f, 0.0f);
+
+            // vertical
+            glVertex3f(-50.0f, -50.0f + i * 10.0f, 0.0f);
+            glVertex3f(50.0f, -50.0f + i * 10.0f, 0.0f);
+        }
+        glEnd();
+
+        glBegin(GL_TRIANGLES);          // Drawing Using Triangles
+        glVertex3f(0.0f, 1.0f, 0.0f);   // Top
+        glVertex3f(-1.0f, -1.0f, 0.0f); // Bottom Left
+        glVertex3f(1.0f, -1.0f, 0.0f);  // Bottom Right
+        glEnd();
+    }
+
+    // Render quad
+    if (0)
+    {
+        // glRotatef(0.4f, 0.0f, 1.0f, 0.0f); // Rotate The cube around the Y axis
+        // glRotatef(0.2f, 1.0f, 1.0f, 1.0f);
         glColor3f(0.0f, 1.0f, 0.0f);
 
         glBegin(GL_QUADS);
@@ -120,6 +137,111 @@ void Renderer::update()
         glVertex2f(-0.5f, 0.5f);
         glEnd();
     }
+
+    if (1)
+    {
+
+        glColor3f(0, 1, 1);
+        glBegin(GL_LINES);
+        for (int i = 0; i <= 10; i++)
+        {
+            // horizontal
+            glVertex3f(-50.0f + i * 10.0f, -50.0f, 0.0f);
+            glVertex3f(-50.0f + i * 10.0f, 50.0f, 0.0f);
+
+            // vertical
+            glVertex3f(-50.0f, -50.0f + i * 10.0f, 0.0f);
+            glVertex3f(50.0f, -50.0f + i * 10.0f, 0.0f);
+        }
+        glEnd();
+
+
+        // glColor3f(0.0f, 1.0f, 0.0f);
+        // glBegin(GL_QUADS);
+
+        int depthHeight = 480;
+        int depthWidth = 640;
+        float edgeThreshold = 0.02f;
+
+        for (auto i = 0; i < depthHeight - 1; i++)
+        {
+            for (auto j = 0; j < depthWidth - 1; j++)
+            {
+                unsigned int i0 = i * depthWidth + j;
+                unsigned int i1 = (i + 1) * depthWidth + j;
+                unsigned int i2 = i * depthWidth + j + 1;
+                unsigned int i3 = (i + 1) * depthWidth + j + 1;
+
+                bool valid0 = vertices.at(i0).allFinite();
+                bool valid1 = vertices.at(i1).allFinite();
+                bool valid2 = vertices.at(i2).allFinite();
+                bool valid3 = vertices.at(i3).allFinite();
+
+                if (valid0 && valid1 && valid2)
+                {
+                    float d0 = (vertices.at(i0) - vertices.at(i1)).norm();
+                    // std::cout << d0 << std::endl;
+                    float d1 = (vertices.at(i0) - vertices.at(i2)).norm();
+                    // std::cout << d1 << std::endl;
+                    float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
+                    // std::cout << d2 << std::endl;
+                    if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
+                        glVertex3f(i0, i1, i2);
+                }
+                if (valid1 && valid2 && valid3)
+                {
+                    float d0 = (vertices.at(i3) - vertices.at(i1)).norm();
+                    float d1 = (vertices.at(i3) - vertices.at(i2)).norm();
+                    float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
+                    if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
+                        glVertex3f(i1, i3, i2);
+                }
+            }
+        }
+
+        // glEnd();
+    }
+
+    // {
+    //     // Create triangles
+    //     std::vector<Vector3i> mTriangles;
+    //     mTriangles.reserve((depthHeight - 1) * (depthWidth - 1) * 2);
+    //     for (unsigned int i = 0; i < depthHeight - 1; i++)
+    //     {
+    //         for (unsigned int j = 0; j < depthWidth - 1; j++)
+    //         {
+    //             unsigned int i0 = i * depthWidth + j;
+    //             unsigned int i1 = (i + 1) * depthWidth + j;
+    //             unsigned int i2 = i * depthWidth + j + 1;
+    //             unsigned int i3 = (i + 1) * depthWidth + j + 1;
+
+    //             bool valid0 = mVerticesGlobal->at(i0).allFinite();
+    //             bool valid1 = mVerticesGlobal->at(i1).allFinite();
+    //             bool valid2 = mVerticesGlobal->at(i2).allFinite();
+    //             bool valid3 = mVerticesGlobal->at(i3).allFinite();
+
+    //             if (valid0 && valid1 && valid2)
+    //             {
+    //                 float d0 = (mVerticesGlobal->at(i0) - mVerticesGlobal->at(i1)).norm();
+    //                 // std::cout << d0 << std::endl;
+    //                 float d1 = (mVerticesGlobal->at(i0) - mVerticesGlobal->at(i2)).norm();
+    //                 // std::cout << d1 << std::endl;
+    //                 float d2 = (mVerticesGlobal->at(i1) - mVerticesGlobal->at(i2)).norm();
+    //                 // std::cout << d2 << std::endl;
+    //                 if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
+    //                     mTriangles.emplace_back(Vector3i(i0, i1, i2));
+    //             }
+    //             if (valid1 && valid2 && valid3)
+    //             {
+    //                 float d0 = (mVerticesGlobal->at(i3) - mVerticesGlobal->at(i1)).norm();
+    //                 float d1 = (mVerticesGlobal->at(i3) - mVerticesGlobal->at(i2)).norm();
+    //                 float d2 = (mVerticesGlobal->at(i1) - mVerticesGlobal->at(i2)).norm();
+    //                 if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
+    //                     mTriangles.emplace_back(Vector3i(i1, i3, i2));
+    //             }
+    //         }
+    //     }
+    // }
 
     // Update screen
     SDL_GL_SwapWindow(gWindow);

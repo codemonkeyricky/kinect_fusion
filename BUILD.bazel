@@ -38,7 +38,8 @@ cc_binary(
     ],
     linkopts = [ 
         "-lfreeimage",
-        "-lSDL2" ,
-        "-lGL" ,
+        "-lSDL2",
+        "-lGL",
+        "-lGLU",
         ],
 )

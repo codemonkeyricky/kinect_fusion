@@ -120,10 +120,10 @@ int main()
 
     if (frameCount == 0)
     {
-      std::stringstream ss;
-      ss << filenameBaseOut << frameCount << ".off";
-      if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
-          return -1;
+      // std::stringstream ss;
+      // ss << filenameBaseOut << frameCount << ".off";
+      // if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
+      //     return -1;
     }
     else
     {
@@ -157,7 +157,7 @@ int main()
       rc.changeFrame(curFrame);
       curFrame = rc.rayCast();
 
-      renderer.update();
+      renderer.update(curFrame.getVertexMapGlobal());
 
       if (0)
       {
