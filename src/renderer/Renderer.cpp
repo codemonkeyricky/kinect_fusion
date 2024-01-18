@@ -42,7 +42,7 @@ bool initGL()
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(0, -55.0, 50.0, 0, 0, 0, 0, 0, 1);
+    gluLookAt(0, -3.0, 2.0, 0, 0, 0, 0, 0, 1);
 
     return success;
 }
@@ -53,6 +53,8 @@ const int SCREEN_HEIGHT = 1080;
 
 Renderer::Renderer()
 {
+    // https://stackoverflow.com/questions/62035106/how-to-change-the-view-perspective-in-opengl
+
     SDL_Init(SDL_INIT_VIDEO);
 
     // Use OpenGL 2.1
@@ -140,7 +142,6 @@ void Renderer::update(std::vector<Eigen::Vector3f> &vertices)
 
     if (1)
     {
-
         glColor3f(0, 1, 1);
         glBegin(GL_LINES);
         for (int i = 0; i <= 10; i++)
@@ -155,9 +156,6 @@ void Renderer::update(std::vector<Eigen::Vector3f> &vertices)
         }
         glEnd();
 
-
-        // glColor3f(0.0f, 1.0f, 0.0f);
-        // glBegin(GL_QUADS);
 
         int depthHeight = 480;
         int depthWidth = 640;
@@ -186,7 +184,14 @@ void Renderer::update(std::vector<Eigen::Vector3f> &vertices)
                     float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
                     // std::cout << d2 << std::endl;
                     if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
-                        glVertex3f(i0, i1, i2);
+                    {
+                        glColor3f(0.0f, 1.0f, 0.0f);
+                        glBegin(GL_TRIANGLES); // Drawing Using Triangles
+                        glVertex3f(vertices[i0][0], vertices[i0][1], vertices[i0][2]);
+                        glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
+                        glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
+                        glEnd();
+                    }
                 }
                 if (valid1 && valid2 && valid3)
                 {
@@ -194,12 +199,18 @@ void Renderer::update(std::vector<Eigen::Vector3f> &vertices)
                     float d1 = (vertices.at(i3) - vertices.at(i2)).norm();
                     float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
                     if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
-                        glVertex3f(i1, i3, i2);
+                    {
+                        glColor3f(1.0f, 0.0f, 0.0f);
+                        glBegin(GL_TRIANGLES); // Drawing Using Triangles
+                        glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
+                        glVertex3f(vertices[i3][0], vertices[i3][1], vertices[i3][2]);
+                        glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
+                        glEnd();
+                    }
                 }
             }
         }
 
-        // glEnd();
     }
 
     // {
