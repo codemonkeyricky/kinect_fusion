@@ -22,9 +22,8 @@ void mistake(
 	ong.emplace_back(Vector3f(MINF, MINF, MINF));
 }
 
-__attribute__((optimize("O0")))
-Frame &
-RayCaster::rayCast()
+// __attribute__((optimize("O0")))
+Frame &RayCaster::rayCast()
 {
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
 	const Matrix4f cameraToWorld = worldToCamera.inverse();

@@ -19,7 +19,7 @@
 #define EDGE_THRESHOLD 0.02
 #define ANGLE_THRESHOLD 1.05
 #define MAX_FRAME_NUM 800
-#define MIN_POINT -1.5f, -1.0f, -1.0f
+#define MIN_POINT -1.5f, -1.0f, -0.5f
 #define MAX_POINT 1.5f, 1.0f, 2.5f
 #define RESOLUTION 128, 128, 128
 // #define RESOLUTION 256, 256, 256
@@ -30,11 +30,11 @@
 int main()
 {
     // Make sure this path points to the data folder
-    // std::string filenameIn = "data/rgbd_dataset_freiburg1_xyz/";
+    std::string filenameIn = "data/rgbd_dataset_freiburg1_xyz/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg2_xyz/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg1_desk2/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg1_floor/";
-    std::string filenameIn = "data/rgbd_dataset_freiburg1_rpy/";
+    // std::string filenameIn = "data/rgbd_dataset_freiburg1_rpy/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg1_desk/";
     std::string filenameBaseOut = std::string("output/mesh_");
     std::string filenameBaseOutMC = std::string("output/MCmesh_");
