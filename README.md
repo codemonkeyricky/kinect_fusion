@@ -71,3 +71,7 @@ Things implemented on CUDA
 | Correspondences: 138,609  | Correspondences: 23,792  | 6
 | Volume integration: 8,787,468  | Volume integration: 694,208  | 12
 | Linear System: 277  | Linear System: 488  | 0.7
+
+
+# Data
+https://cvg.cit.tum.de/data/datasets/rgbd-dataset/download
