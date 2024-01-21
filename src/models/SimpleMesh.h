@@ -4,6 +4,7 @@
 #include <fstream>
 
 #include "Eigen.h"
+#include "VirtualSensor.h"
 
 struct Vertex {
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -228,6 +229,7 @@ public:
 		return true;
 	}
 
+	__attribute__((optimize("O0")))
 	bool writeMesh(const std::string &filename)
 	{
 		// Write off file.

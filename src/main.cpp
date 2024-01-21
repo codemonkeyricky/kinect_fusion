@@ -69,10 +69,10 @@ int main()
     // Make sure this path points to the data folder
     // std::string filenameIn = "data/rgbd_dataset_freiburg1_xyz/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg2_xyz/";
-    std::string filenameIn = "data/rgbd_dataset_freiburg1_desk/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg1_desk2/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg1_floor/";
-    // std::string filenameIn = "data/rgbd_dataset_freiburg1_rpy/";
+    std::string filenameIn = "data/rgbd_dataset_freiburg1_rpy/";
+    // std::string filenameIn = "data/rgbd_dataset_freiburg1_desk/";
     std::string filenameBaseOut = std::string("output/mesh_");
     std::string filenameBaseOutMC = std::string("output/MCmesh_");
 
@@ -159,7 +159,7 @@ int main()
             rc.changeFrame(curFrame);
             curFrame = rc.rayCast();
 
-            renderer.update(curFrame.getVertexMapGlobal(), (const char *)curFrame.getColorMap());
+            // renderer.update(curFrame.getVertexMapGlobal(), (const char *)curFrame.getColorMap());
 
             if (0)
             {
@@ -172,7 +172,7 @@ int main()
                 }
             }
 
-            if (frameCount % 2 == 1)
+            // if (frameCount % 2 == 1)
             {
                 // TODO
                 std::stringstream ss;
@@ -205,6 +205,8 @@ int main()
                 }
                 */
                 std::cout << "Marching Cubes done! " << mesh.getVertices().size() << " " << mesh.getTriangles().size() << std::endl;
+
+                renderer.update(mesh.getTriangles(), mesh.getVertices());
 
                 // write mesh to file
                 if (!mesh.writeMesh(ss.str()))

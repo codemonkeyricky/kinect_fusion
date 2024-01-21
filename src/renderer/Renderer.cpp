@@ -26,7 +26,7 @@ bool initGL()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     // gluLookAt(1, -3.0, 1.0, 0, 0, 0, 0, 0, 1);
-    gluLookAt(0, 0.0, -2.0, 0, 0, 0, 0, -1, 0);
+    gluLookAt(0, 0.0, -1.0, 0, 0, 0, 0, -1, 0);
 
     return success;
 }
@@ -80,149 +80,135 @@ Renderer::Renderer()
     }
 }
 
+static void drawAxis()
+{
+    glBegin(GL_LINES);
+
+    glColor3f(1, 0, 0);
+    glVertex3f(0, 0, 0);
+    glVertex3f(1, 0, 0);
+
+    glColor3f(0, 1, 0);
+    glVertex3f(0, 0, 0);
+    glVertex3f(0, 1, 0);
+
+    glColor3f(0, 0, 1);
+    glVertex3f(0, 0, 0);
+    glVertex3f(0, 0, 1);
+
+    glEnd();
+}
+
 void Renderer::update(std::vector<Eigen::Vector3f> &vertices, const char *colorMap)
 {
     // Clear color buffer
     glClear(GL_COLOR_BUFFER_BIT);
 
-    if (1)
+    drawAxis();
+
+    int depthHeight = 480;
+    int depthWidth = 640;
+    float edgeThreshold = 0.02f;
+
+    for (auto i = 0; i < depthHeight - 1; i++)
     {
-        // glColor3f(0, 1, 1);
-        glBegin(GL_LINES);
-        // for (int i = 0; i <= 10; i++)
-        // {
-        //     // horizontal
-        //     glVertex3f(-50.0f + i * 10.0f, -50.0f, 0.0f);
-        //     glVertex3f(-50.0f + i * 10.0f, 50.0f, 0.0f);
-
-        //     // vertical
-        //     glVertex3f(-50.0f, -50.0f + i * 10.0f, 0.0f);
-        //     glVertex3f(50.0f, -50.0f + i * 10.0f, 0.0f);
-        // }
-
-        glColor3f(1, 0, 0);
-        glVertex3f(0, 0, 0);
-        glVertex3f(1, 0, 0);
-
-        glColor3f(0, 1, 0);
-        glVertex3f(0, 0, 0);
-        glVertex3f(0, 1, 0);
-
-        glColor3f(0, 0, 1);
-        glVertex3f(0, 0, 0);
-        glVertex3f(0, 0, 1);
-
-        glEnd();
-
-        int depthHeight = 480;
-        int depthWidth = 640;
-        float edgeThreshold = 0.02f;
-
-        for (auto i = 0; i < depthHeight - 1; i++)
+        for (auto j = 0; j < depthWidth - 1; j++)
         {
-            for (auto j = 0; j < depthWidth - 1; j++)
+            unsigned int i0 = i * depthWidth + j;
+            unsigned int i1 = (i + 1) * depthWidth + j;
+            unsigned int i2 = i * depthWidth + j + 1;
+            unsigned int i3 = (i + 1) * depthWidth + j + 1;
+
+            bool valid0 = vertices.at(i0).allFinite();
+            bool valid1 = vertices.at(i1).allFinite();
+            bool valid2 = vertices.at(i2).allFinite();
+            bool valid3 = vertices.at(i3).allFinite();
+
+            if (valid0 && valid1 && valid2)
             {
-                unsigned int i0 = i * depthWidth + j;
-                unsigned int i1 = (i + 1) * depthWidth + j;
-                unsigned int i2 = i * depthWidth + j + 1;
-                unsigned int i3 = (i + 1) * depthWidth + j + 1;
-
-                bool valid0 = vertices.at(i0).allFinite();
-                bool valid1 = vertices.at(i1).allFinite();
-                bool valid2 = vertices.at(i2).allFinite();
-                bool valid3 = vertices.at(i3).allFinite();
-
-                if (valid0 && valid1 && valid2)
+                float d0 = (vertices.at(i0) - vertices.at(i1)).norm();
+                // std::cout << d0 << std::endl;
+                float d1 = (vertices.at(i0) - vertices.at(i2)).norm();
+                // std::cout << d1 << std::endl;
+                float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
+                // std::cout << d2 << std::endl;
+                if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
                 {
-                    float d0 = (vertices.at(i0) - vertices.at(i1)).norm();
-                    // std::cout << d0 << std::endl;
-                    float d1 = (vertices.at(i0) - vertices.at(i2)).norm();
-                    // std::cout << d1 << std::endl;
-                    float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
-                    // std::cout << d2 << std::endl;
-                    if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
-                    {
-                        glBegin(GL_TRIANGLES); // Drawing Using Triangles
+                    glBegin(GL_TRIANGLES); // Drawing Using Triangles
 
-                        glColor3ub(colorMap[i0 * 4 + 0], colorMap[i0 * 4 + 1], colorMap[i0 * 4 + 2]);
-                        glVertex3f(vertices[i0][0], vertices[i0][1], vertices[i0][2]);
+                    glColor3ub(colorMap[i0 * 4 + 0], colorMap[i0 * 4 + 1], colorMap[i0 * 4 + 2]);
+                    glVertex3f(vertices[i0][0], vertices[i0][1], vertices[i0][2]);
 
-                        glColor3ub(colorMap[i1 * 4 + 0], colorMap[i1 * 4 + 1], colorMap[i1 * 4 + 2]);
-                        glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
+                    glColor3ub(colorMap[i1 * 4 + 0], colorMap[i1 * 4 + 1], colorMap[i1 * 4 + 2]);
+                    glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
 
-                        glColor3ub(colorMap[i2 * 4 + 0], colorMap[i2 * 4 + 1], colorMap[i2 * 4 + 2]);
-                        glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
+                    glColor3ub(colorMap[i2 * 4 + 0], colorMap[i2 * 4 + 1], colorMap[i2 * 4 + 2]);
+                    glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
 
-                        glEnd();
-                    }
+                    glEnd();
                 }
-                if (valid1 && valid2 && valid3)
+            }
+            if (valid1 && valid2 && valid3)
+            {
+                float d0 = (vertices.at(i3) - vertices.at(i1)).norm();
+                float d1 = (vertices.at(i3) - vertices.at(i2)).norm();
+                float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
+                if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
                 {
-                    float d0 = (vertices.at(i3) - vertices.at(i1)).norm();
-                    float d1 = (vertices.at(i3) - vertices.at(i2)).norm();
-                    float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
-                    if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
-                    {
-                        glBegin(GL_TRIANGLES); // Drawing Using Triangles
+                    glBegin(GL_TRIANGLES); // Drawing Using Triangles
 
-                        glColor3b(colorMap[i1 * 4 + 0], colorMap[i1 * 4 + 1], colorMap[i1 * 4 + 2]);
-                        glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
+                    glColor3b(colorMap[i1 * 4 + 0], colorMap[i1 * 4 + 1], colorMap[i1 * 4 + 2]);
+                    glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
 
-                        glColor3b(colorMap[i3 * 4 + 0], colorMap[i3 * 4 + 1], colorMap[i3 * 4 + 2]);
-                        glVertex3f(vertices[i3][0], vertices[i3][1], vertices[i3][2]);
+                    glColor3b(colorMap[i3 * 4 + 0], colorMap[i3 * 4 + 1], colorMap[i3 * 4 + 2]);
+                    glVertex3f(vertices[i3][0], vertices[i3][1], vertices[i3][2]);
 
-                        glColor3b(colorMap[i2 * 4 + 0], colorMap[i2 * 4 + 1], colorMap[i2 * 4 + 2]);
-                        glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
+                    glColor3b(colorMap[i2 * 4 + 0], colorMap[i2 * 4 + 1], colorMap[i2 * 4 + 2]);
+                    glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
 
-                        glEnd();
-                    }
+                    glEnd();
                 }
             }
         }
-
     }
 
-    // {
-    //     // Create triangles
-    //     std::vector<Vector3i> mTriangles;
-    //     mTriangles.reserve((depthHeight - 1) * (depthWidth - 1) * 2);
-    //     for (unsigned int i = 0; i < depthHeight - 1; i++)
-    //     {
-    //         for (unsigned int j = 0; j < depthWidth - 1; j++)
-    //         {
-    //             unsigned int i0 = i * depthWidth + j;
-    //             unsigned int i1 = (i + 1) * depthWidth + j;
-    //             unsigned int i2 = i * depthWidth + j + 1;
-    //             unsigned int i3 = (i + 1) * depthWidth + j + 1;
-
-    //             bool valid0 = mVerticesGlobal->at(i0).allFinite();
-    //             bool valid1 = mVerticesGlobal->at(i1).allFinite();
-    //             bool valid2 = mVerticesGlobal->at(i2).allFinite();
-    //             bool valid3 = mVerticesGlobal->at(i3).allFinite();
-
-    //             if (valid0 && valid1 && valid2)
-    //             {
-    //                 float d0 = (mVerticesGlobal->at(i0) - mVerticesGlobal->at(i1)).norm();
-    //                 // std::cout << d0 << std::endl;
-    //                 float d1 = (mVerticesGlobal->at(i0) - mVerticesGlobal->at(i2)).norm();
-    //                 // std::cout << d1 << std::endl;
-    //                 float d2 = (mVerticesGlobal->at(i1) - mVerticesGlobal->at(i2)).norm();
-    //                 // std::cout << d2 << std::endl;
-    //                 if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
-    //                     mTriangles.emplace_back(Vector3i(i0, i1, i2));
-    //             }
-    //             if (valid1 && valid2 && valid3)
-    //             {
-    //                 float d0 = (mVerticesGlobal->at(i3) - mVerticesGlobal->at(i1)).norm();
-    //                 float d1 = (mVerticesGlobal->at(i3) - mVerticesGlobal->at(i2)).norm();
-    //                 float d2 = (mVerticesGlobal->at(i1) - mVerticesGlobal->at(i2)).norm();
-    //                 if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
-    //                     mTriangles.emplace_back(Vector3i(i1, i3, i2));
-    //             }
-    //         }
-    //     }
-    // }
-
     // Update screen
+    SDL_GL_SwapWindow(gWindow);
+}
+
+void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &vertices)
+{
+    // Clear color buffer
+    glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    drawAxis();
+
+    glBegin(GL_TRIANGLES); // Drawing Using Triangles
+    for (auto &triangle : triangles)
+    {
+        auto i0 = triangle.idx0; 
+        auto i1 = triangle.idx1; 
+        auto i2 = triangle.idx2;
+
+        if (vertices[i0].position.allFinite() && vertices[i1].position.allFinite() && vertices[i2].position.allFinite())
+        {
+            // glColor3ub(250, 250, 250); 
+            glColor3ub(vertices[i0].color.x(), vertices[i0].color.y(), vertices[i0].color.z());
+            glVertex3f(vertices[i0].position.x(), vertices[i0].position.y(), vertices[i0].position.z());
+
+            // glColor3ub(250, 250, 250); 
+            glColor3ub(vertices[i1].color.x(), vertices[i1].color.y(), vertices[i1].color.z());
+            glVertex3f(vertices[i1].position.x(), vertices[i1].position.y(), vertices[i1].position.z());
+
+            // glColor3ub(250, 250, 250); 
+            glColor3ub(vertices[i2].color.x(), vertices[i2].color.y(), vertices[i2].color.z());
+            glVertex3f(vertices[i2].position.x(), vertices[i2].position.y(), vertices[i2].position.z());
+
+            // printf("color = %d\n", vertices[i2].color.x());
+        }
+    }
+    glEnd();
+
     SDL_GL_SwapWindow(gWindow);
 }
