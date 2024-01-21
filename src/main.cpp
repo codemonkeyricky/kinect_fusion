@@ -206,7 +206,7 @@ int main()
                 */
                 std::cout << "Marching Cubes done! " << mesh.getVertices().size() << " " << mesh.getTriangles().size() << std::endl;
 
-                renderer.update(mesh.getTriangles(), mesh.getVertices());
+                renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point);
 
                 // write mesh to file
                 if (!mesh.writeMesh(ss.str()))
