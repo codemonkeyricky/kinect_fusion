@@ -27,43 +27,6 @@
 // #define RESOLUTION 1024, 1024, 1024
 #define ICP_ITERATIONS 20
 
-bool writeBoundingBox(Vector3f &minpt, Vector3f &maxpt)
-{
-    std::ofstream outFile("output/bounding.off");
-    if (!outFile.is_open())
-        return false;
-
-    float nx = minpt[0];
-    float ny = minpt[1];
-    float nz = minpt[2];
-    float px = maxpt[0];
-    float py = maxpt[1];
-    float pz = maxpt[2];
-
-    // vertex
-    outFile << "OFF" << std::endl;
-
-    outFile << "8 2 0" << std::endl;
-
-    outFile << px << " " << py << " " << pz << std::endl;
-    outFile << px << " " << ny << " " << pz << std::endl;
-    outFile << nx << " " << ny << " " << pz << std::endl;
-    outFile << nx << " " << py << " " << pz << std::endl;
-
-    outFile << px << " " << py << " " << nz << std::endl;
-    outFile << px << " " << ny << " " << nz << std::endl;
-    outFile << nx << " " << ny << " " << nz << std::endl;
-    outFile << nx << " " << py << " " << nz << std::endl;
-
-    // face
-    outFile << "4    0 3 7 4   255 0 0" << std::endl; // +y
-    // outFile << "4    4 5 6 7   255 0 0" << std::endl; // -z
-    outFile << "4    3 2 6 7   255 0 0" << std::endl; // -x
-
-    outFile.close();
-    return true;
-}
-
 int main()
 {
     // Make sure this path points to the data folder
@@ -94,8 +57,6 @@ int main()
     RayCaster rc = RayCaster(volume);
     Matrix4f identity = Matrix4f::Identity(4, 4); // initial estimate
     Matrix4f pose = identity;
-
-    writeBoundingBox(min_point, max_point);
 
     Renderer renderer;
 
@@ -129,48 +90,17 @@ int main()
         }
         else
         {
-            // std::cout << prevFrame.getVertex(302992) << std::endl;
-            // std::cout << curFrame.getVertex(302992) << std::endl;
-
             ICP icp(prevFrame, curFrame, DISTANCE_THRESHOLD, ANGLE_THRESHOLD);
-            // std::vector<std::pair<size_t, size_t>> correspondenceIds(
-            //     {{302990, 302990}});
-
-            //   icp.findIndicesOfCorrespondingPoints2(pose);
-            //   icp.findIndicesOfCorrespondingPoints2(pose);
-
             pose = icp.estimatePose(pose, ICP_ITERATIONS);
             std::cout << pose << std::endl;
 
             curFrame.setExtrinsicMatrix(curFrame.getExtrinsicMatrix() * pose.inverse());
-
-            // {
-            //   std::stringstream ss;
-            //   ss << filenameBaseOut << frameCount << "_b4.off";
-            //   if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
-            //   {
-            //     std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
-            //     return -1;
-            //   }
-            // }
 
             volume.integrate(curFrame);
 
             rc.changeFrame(curFrame);
             curFrame = rc.rayCast();
 
-            // renderer.update(curFrame.getVertexMapGlobal(), (const char *)curFrame.getColorMap());
-
-            if (0)
-            {
-                std::stringstream ss;
-                ss << filenameBaseOut << frameCount << ".off";
-                if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
-                {
-                    std::cout << "Failed to write mesh!\nCheck file path!" << std::endl;
-                    return -1;
-                }
-            }
 
             // if (frameCount % 2 == 1)
             {
@@ -208,12 +138,6 @@ int main()
 
                 renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point);
 
-                // write mesh to file
-                if (!mesh.writeMesh(ss.str()))
-                {
-                    std::cout << "ERROR: unable to write output file!" << std::endl;
-                    return -1;
-                }
             }
         }
 

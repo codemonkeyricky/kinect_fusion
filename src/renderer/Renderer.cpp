@@ -26,7 +26,7 @@ bool initGL()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     // gluLookAt(1, -3.0, 1.0, 0, 0, 0, 0, 0, 1);
-    gluLookAt(1, 0.0, -1.0, 0, 0, 0, 0, -1, 0);
+    gluLookAt(-3, 0.0, -3, 0, 0, 0, 0, -1, 0);
 
     return success;
 }
@@ -220,13 +220,29 @@ void drawBoundingBox(Vector3f &minpt, Vector3f &maxpt)
 
     glVertex3f(px, py, pz);
     glVertex3f(px, ny, pz);
+
+    glVertex3f(px, ny, pz);
+    glVertex3f(nx, ny, pz);
+
     glVertex3f(nx, ny, pz);
     glVertex3f(nx, py, pz);
 
+    glVertex3f(nx, py, pz);
+    glVertex3f(px, py, pz);
+
+
+
     glVertex3f(px, py, nz);
     glVertex3f(px, ny, nz);
+
+    glVertex3f(px, ny, nz);
+    glVertex3f(nx, ny, nz);
+
     glVertex3f(nx, ny, nz);
     glVertex3f(nx, py, nz);
+
+    glVertex3f(nx, py, nz);
+    glVertex3f(px, py, nz);
 
     glEnd();
 }
