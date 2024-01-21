@@ -259,6 +259,7 @@ const BYTE* Frame::getColorMap() {
     return colorMap;
 }
 
+__attribute__((optimize("O0")))
 bool Frame::writeMesh(const std::string &filename, float edgeThreshold)
 {
     // Write off file.

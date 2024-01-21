@@ -19,30 +19,14 @@ bool initGL()
     bool success = true;
     GLenum error = GL_NO_ERROR;
 
-    // // Initialize Projection Matrix
-    // glMatrixMode(GL_PROJECTION);
-    // glLoadIdentity();
-    // gluPerspective(60.0, 4.0 / 3.0, 1, 40);
-    // assert(GL_NO_ERROR == glGetError());
-
-    // // Initialize Modelview Matrix
-    // // glFrustum(-5, 5, -5, 5, 15, 150);
-    // glMatrixMode(GL_MODELVIEW);
-    // glLoadIdentity();
-    // gluLookAt(0, 0, 0.5, 0, 0, 0, 0, 1, 0);
-    // assert(GL_NO_ERROR == glGetError());
-
-    // // Initialize clear color
-    // glClearColor(0.f, 0.f, 0.f, 1.f);
-    // assert(GL_NO_ERROR == glGetError());
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(60.0, 1920.0 / 1080.0, 1, 200);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(0, -3.0, 2.0, 0, 0, 0, 0, 0, 1);
+    // gluLookAt(1, -3.0, 1.0, 0, 0, 0, 0, 0, 1);
+    gluLookAt(0, 0.0, -2.0, 0, 0, 0, 0, -1, 0);
 
     return success;
 }
@@ -96,66 +80,39 @@ Renderer::Renderer()
     }
 }
 
-void Renderer::update(std::vector<Eigen::Vector3f> &vertices)
+void Renderer::update(std::vector<Eigen::Vector3f> &vertices, const char *colorMap)
 {
     // Clear color buffer
     glClear(GL_COLOR_BUFFER_BIT);
 
-    if (0)
-    {
-
-        glColor3f(0, 1, 1);
-        glBegin(GL_LINES);
-        for (int i = 0; i <= 10; i++)
-        {
-            // horizontal
-            glVertex3f(-50.0f + i * 10.0f, -50.0f, 0.0f);
-            glVertex3f(-50.0f + i * 10.0f, 50.0f, 0.0f);
-
-            // vertical
-            glVertex3f(-50.0f, -50.0f + i * 10.0f, 0.0f);
-            glVertex3f(50.0f, -50.0f + i * 10.0f, 0.0f);
-        }
-        glEnd();
-
-        glBegin(GL_TRIANGLES);          // Drawing Using Triangles
-        glVertex3f(0.0f, 1.0f, 0.0f);   // Top
-        glVertex3f(-1.0f, -1.0f, 0.0f); // Bottom Left
-        glVertex3f(1.0f, -1.0f, 0.0f);  // Bottom Right
-        glEnd();
-    }
-
-    // Render quad
-    if (0)
-    {
-        // glRotatef(0.4f, 0.0f, 1.0f, 0.0f); // Rotate The cube around the Y axis
-        // glRotatef(0.2f, 1.0f, 1.0f, 1.0f);
-        glColor3f(0.0f, 1.0f, 0.0f);
-
-        glBegin(GL_QUADS);
-        glVertex2f(-0.5f, -0.5f);
-        glVertex2f(0.5f, -0.5f);
-        glVertex2f(0.5f, 0.5f);
-        glVertex2f(-0.5f, 0.5f);
-        glEnd();
-    }
-
     if (1)
     {
-        glColor3f(0, 1, 1);
+        // glColor3f(0, 1, 1);
         glBegin(GL_LINES);
-        for (int i = 0; i <= 10; i++)
-        {
-            // horizontal
-            glVertex3f(-50.0f + i * 10.0f, -50.0f, 0.0f);
-            glVertex3f(-50.0f + i * 10.0f, 50.0f, 0.0f);
+        // for (int i = 0; i <= 10; i++)
+        // {
+        //     // horizontal
+        //     glVertex3f(-50.0f + i * 10.0f, -50.0f, 0.0f);
+        //     glVertex3f(-50.0f + i * 10.0f, 50.0f, 0.0f);
 
-            // vertical
-            glVertex3f(-50.0f, -50.0f + i * 10.0f, 0.0f);
-            glVertex3f(50.0f, -50.0f + i * 10.0f, 0.0f);
-        }
+        //     // vertical
+        //     glVertex3f(-50.0f, -50.0f + i * 10.0f, 0.0f);
+        //     glVertex3f(50.0f, -50.0f + i * 10.0f, 0.0f);
+        // }
+
+        glColor3f(1, 0, 0);
+        glVertex3f(0, 0, 0);
+        glVertex3f(1, 0, 0);
+
+        glColor3f(0, 1, 0);
+        glVertex3f(0, 0, 0);
+        glVertex3f(0, 1, 0);
+
+        glColor3f(0, 0, 1);
+        glVertex3f(0, 0, 0);
+        glVertex3f(0, 0, 1);
+
         glEnd();
-
 
         int depthHeight = 480;
         int depthWidth = 640;
@@ -185,11 +142,17 @@ void Renderer::update(std::vector<Eigen::Vector3f> &vertices)
                     // std::cout << d2 << std::endl;
                     if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
                     {
-                        glColor3f(0.0f, 1.0f, 0.0f);
                         glBegin(GL_TRIANGLES); // Drawing Using Triangles
+
+                        glColor3ub(colorMap[i0 * 4 + 0], colorMap[i0 * 4 + 1], colorMap[i0 * 4 + 2]);
                         glVertex3f(vertices[i0][0], vertices[i0][1], vertices[i0][2]);
+
+                        glColor3ub(colorMap[i1 * 4 + 0], colorMap[i1 * 4 + 1], colorMap[i1 * 4 + 2]);
                         glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
+
+                        glColor3ub(colorMap[i2 * 4 + 0], colorMap[i2 * 4 + 1], colorMap[i2 * 4 + 2]);
                         glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
+
                         glEnd();
                     }
                 }
@@ -200,11 +163,17 @@ void Renderer::update(std::vector<Eigen::Vector3f> &vertices)
                     float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
                     if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
                     {
-                        glColor3f(1.0f, 0.0f, 0.0f);
                         glBegin(GL_TRIANGLES); // Drawing Using Triangles
+
+                        glColor3b(colorMap[i1 * 4 + 0], colorMap[i1 * 4 + 1], colorMap[i1 * 4 + 2]);
                         glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
+
+                        glColor3b(colorMap[i3 * 4 + 0], colorMap[i3 * 4 + 1], colorMap[i3 * 4 + 2]);
                         glVertex3f(vertices[i3][0], vertices[i3][1], vertices[i3][2]);
+
+                        glColor3b(colorMap[i2 * 4 + 0], colorMap[i2 * 4 + 1], colorMap[i2 * 4 + 2]);
                         glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
+
                         glEnd();
                     }
                 }

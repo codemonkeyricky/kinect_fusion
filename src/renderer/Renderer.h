@@ -7,5 +7,5 @@ class Renderer
 {
 public:
     Renderer();
-    void update(std::vector<Eigen::Vector3f> &vertices);
+    void update(std::vector<Eigen::Vector3f> &vertices, const char *colorMap);
 };
