@@ -4,3 +4,7 @@
 /output
 .DS_Store
 .vscode/
+build/
+bazel-bin/
+bazel-kfusion/
+bazel-out/

@@ -220,10 +220,12 @@ void Volume::integrate(Frame frame) {
 
 	std::cout << "Integrate starting..." << std::endl;
 
-	for (int k = 0; k < dz; k++) {
-		for (int j = 0; j < dy; j++) {
-			for (int i = 0; i < dx; i++) {
-
+	for (int k = 0; k < dz; k++)
+	{
+		for (int j = 0; j < dy; j++)
+		{
+			for (int i = 0; i < dx; i++)
+			{
 				// project the grid point into image space
 				Pg = gridToWorld(i, j, k);
 				Pc = frame.projectPointIntoFrame(Pg);
@@ -298,7 +300,6 @@ void Volume::integrate(Frame frame) {
 					
 					//std::cout << vol[getPosFromTuple(i, j, k)].getValue() << std::endl;
 				}
-
 			}
 		}
 	}

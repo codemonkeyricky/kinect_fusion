@@ -312,7 +312,7 @@ void ICP::findIndicesOfCorrespondingPoints2(
     auto duration4 = std::chrono::duration_cast<std::chrono::microseconds>(time4 - time3);
     std::cout << "### ICP2 duration #1: " << duration1.count() << " us" << std::endl;
     std::cout << "### ICP2 duration #2: " << duration2.count() << " us" << std::endl;
-    std::cout << "### ICP2 duration #3: " << duration3.count() << " us" << std::endl;
+    // std::cout << "### ICP2 duration #3: " << duration3.count() << " us" << std::endl;
     // std::cout << "### ICP2 duration #4: " << duration4.count() << " us, pixel copied = " << cnt << std::endl;
     std::cout << "### ICP2 cnt: " << cnt << std::endl;
 

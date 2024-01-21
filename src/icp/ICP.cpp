@@ -50,6 +50,8 @@ Matrix4f ICP::estimatePose(
         //         assert(0);
         //     }
 
+        assert(points_ref.size());
+
         std::cout << "# corresponding points: " << points_ref.size()
                   << std::endl;
         std::cout << "# total number of points: "
