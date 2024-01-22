@@ -14,6 +14,10 @@ SDL_GLContext gContext;
 //Render flag
 bool gRenderQuad = true;
 
+// Screen dimension constants
+const int SCREEN_WIDTH = 2560;
+const int SCREEN_HEIGHT = 1440;
+
 bool initGL()
 {
     bool success = true;
@@ -21,7 +25,7 @@ bool initGL()
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(60.0, 1920.0 / 1080.0, 1, 200);
+    gluPerspective(60.0, SCREEN_WIDTH * 1.0f / SCREEN_HEIGHT, 1, 200);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -31,9 +35,6 @@ bool initGL()
     return success;
 }
 
-//Screen dimension constants
-const int SCREEN_WIDTH = 1920;
-const int SCREEN_HEIGHT = 1080;
 
 Renderer::Renderer()
 {
@@ -218,6 +219,8 @@ void drawBoundingBox(Vector3f &minpt, Vector3f &maxpt)
 
     glColor3f(0, 1, 1);
 
+    // top
+
     glVertex3f(px, py, pz);
     glVertex3f(px, ny, pz);
 
@@ -230,7 +233,7 @@ void drawBoundingBox(Vector3f &minpt, Vector3f &maxpt)
     glVertex3f(nx, py, pz);
     glVertex3f(px, py, pz);
 
-
+    // bottom
 
     glVertex3f(px, py, nz);
     glVertex3f(px, ny, nz);
@@ -243,6 +246,20 @@ void drawBoundingBox(Vector3f &minpt, Vector3f &maxpt)
 
     glVertex3f(nx, py, nz);
     glVertex3f(px, py, nz);
+
+    // connectors
+
+    glVertex3f(px, py, pz);
+    glVertex3f(px, py, nz);
+
+    glVertex3f(px, ny, pz);
+    glVertex3f(px, ny, nz);
+
+    glVertex3f(nx, ny, pz);
+    glVertex3f(nx, ny, nz);
+
+    glVertex3f(nx, py, pz);
+    glVertex3f(nx, py, nz);
 
     glEnd();
 }

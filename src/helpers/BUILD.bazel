@@ -1,0 +1,23 @@
+
+cc_library(
+    name = "matrix",
+    srcs = [
+        "matrix.h",
+        "matrix.cpp",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "helpers",
+    srcs = [
+        "Eigen.h",
+        "FreeImageHelper.cpp",
+        "FreeImageHelper.h",
+        "VirtualSensor.h",
+    ],
+    deps = [
+        "//src/helpers:matrix"
+    ],
+    visibility = ["//visibility:public"],
+)

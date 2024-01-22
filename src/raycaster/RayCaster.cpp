@@ -1,3 +1,5 @@
+#include <chrono>
+
 #include "RayCaster.h"
 
 //RayCaster::RayCaster() {}
@@ -52,6 +54,8 @@ Frame &RayCaster::rayCast()
 
 	std::cout << "RayCast starting..." << std::endl;
 	int cnt = 0;
+
+	auto t0 = std::chrono::high_resolution_clock::now();
 
 	for (int i = 0; i < height; i++)
 	{
@@ -218,6 +222,8 @@ Frame &RayCaster::rayCast()
 		}
 	}
 
+	auto t1 = std::chrono::high_resolution_clock::now();
+
 	std::cout << "### raycast cnt: " << cnt << std::endl;
 
 	// TODO: update _vector4f variants too
@@ -240,7 +246,12 @@ Frame &RayCaster::rayCast()
 		for (auto i = 0; i < 3; ++i)
 			(*frame.mNormalGlobal_vector4f)[k][i] = (*frame.mNormalsGlobal)[k](i);
 
+	auto t2 = std::chrono::high_resolution_clock::now();
+
 	std::cout << "RayCast done!" << std::endl;
+
+	auto d1 = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
+    std::cout << "### raycast #d1: " << d1.count() << " us" << std::endl;
 
 	return frame;
 }
