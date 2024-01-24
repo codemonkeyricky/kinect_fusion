@@ -31,8 +31,21 @@ public:
 		m_baseDir = datasetDir;
 
 		// read filename lists
+		#if 0
 		if (!ReadFileList(datasetDir + "depth.txt", m_filenameDepthImages, m_depthImagesTimeStamps)) return false;
 		if (!ReadFileList(datasetDir + "rgb.txt", m_filenameColorImages, m_colorImagesTimeStamps)) return false;
+		#else
+		for (auto i = 0; i < 399; ++i)
+		{
+			char rgb[128], depth[128];
+			sprintf(rgb, "processed/rgb/%04d.png", i);
+			sprintf(depth, "processed/depth/%04d.png", i);
+			m_filenameColorImages.push_back(std::string(rgb));
+			m_filenameDepthImages.push_back(std::string(depth));
+			m_depthImagesTimeStamps.push_back(i);
+			m_colorImagesTimeStamps.push_back(i);
+		}
+		#endif
 
 		// read tracking
 		if (!ReadTrajectoryFile(datasetDir + "groundtruth.txt", m_trajectory, m_trajectoryTimeStamps)) return false;

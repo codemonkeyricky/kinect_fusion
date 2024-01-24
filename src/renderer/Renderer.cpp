@@ -30,7 +30,7 @@ bool initGL()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     // gluLookAt(1, -3.0, 1.0, 0, 0, 0, 0, 0, 1);
-    gluLookAt(-3, 0.0, -3, 0, 0, 0, 0, -1, 0);
+    gluLookAt(0, 0.0, -3, 0, 0, 0, 0, -1, 0);
 
     return success;
 }
@@ -266,6 +266,9 @@ void drawBoundingBox(Vector3f &minpt, Vector3f &maxpt)
 
 void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &vertices, Vector3f &minpt, Vector3f &maxpt)
 {
+    SDL_Event event = {};
+    SDL_PollEvent(&event);
+
     // Clear color buffer
     glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
     glClear(GL_COLOR_BUFFER_BIT);

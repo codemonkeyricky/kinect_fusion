@@ -19,25 +19,28 @@
 #define EDGE_THRESHOLD 0.02
 #define ANGLE_THRESHOLD 1.05
 #define MAX_FRAME_NUM 800
-#define MIN_POINT -1.5f, -1.0f, -0.5f
-#define MAX_POINT 1.5f, 1.0f, 2.5f
+#define MIN_POINT -3.5f, -2.0f, -1.0f
+#define MAX_POINT 0.5f, 2.0f, 2.5f
 #define RESOLUTION 128, 128, 128
 // #define RESOLUTION 256, 256, 256
 // #define RESOLUTION 512, 512, 512
 // #define RESOLUTION 1024, 1024, 1024
-#define ICP_ITERATIONS 20
+#define ICP_ITERATIONS 10
+
 
 int main()
 {
     // Make sure this path points to the data folder
-    std::string filenameIn = "data/rgbd_dataset_freiburg1_xyz/";
+    // std::string filenameIn = "data/rgbd_dataset_freiburg1_xyz/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg2_xyz/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg1_desk2/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg1_floor/";
     // std::string filenameIn = "data/rgbd_dataset_freiburg1_rpy/";
-    // std::string filenameIn = "data/rgbd_dataset_freiburg1_desk/";
+    std::string filenameIn = "data/rgbd_dataset_freiburg1_desk/";
     std::string filenameBaseOut = std::string("output/mesh_");
     std::string filenameBaseOutMC = std::string("output/MCmesh_");
+
+    std::vector<vector4f> camPos;
 
     // load video
     std::cout << "Initialize virtual sensor..." << std::endl;
@@ -93,6 +96,7 @@ int main()
             ICP icp(prevFrame, curFrame, DISTANCE_THRESHOLD, ANGLE_THRESHOLD);
             pose = icp.estimatePose(pose, ICP_ITERATIONS);
             std::cout << pose << std::endl;
+            // camPos.push_back({pose[]})
 
             curFrame.setExtrinsicMatrix(curFrame.getExtrinsicMatrix() * pose.inverse());
 
@@ -105,8 +109,6 @@ int main()
             // if (frameCount % 2 == 1)
             {
                 // TODO
-                std::stringstream ss;
-                ss << filenameBaseOutMC << frameCount << ".off";
 
                 std::cout << "Marching Cubes started..." << std::endl;
                 // extract the zero iso-surface using marching cubes
@@ -138,6 +140,12 @@ int main()
 
                 renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point);
 
+                if (frameCount % 5 == 0)
+                {
+                    std::stringstream ss;
+                    ss << filenameBaseOutMC << frameCount << ".off";
+                    mesh.writeMesh(ss.str());
+                }
             }
         }
 

@@ -229,7 +229,7 @@ public:
 		return true;
 	}
 
-	__attribute__((optimize("O0")))
+	// __attribute__((optimize("O0")))
 	bool writeMesh(const std::string &filename)
 	{
 		// Write off file.
