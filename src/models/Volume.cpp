@@ -198,20 +198,21 @@ float Volume::trilinearInterpolation(const Vector3f& p) {
 }
 
 // using given frame calculate TSDF values for all voxels in the grid
-void Volume::integrate(Frame frame) {
+void Volume::integrate(Frame frame)
+{
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
 	const Matrix4f cameraToWorld = worldToCamera.inverse();
 	const Matrix3f intrinsic = frame.getIntrinsicMatrix();
 	Vector3f translation = cameraToWorld.block(0, 3, 3, 1);
-	const float* depthMap = frame.getDepthMap();
-	const BYTE* colorMap = frame.getColorMap();
+	const float *depthMap = frame.getDepthMap();
+	const BYTE *colorMap = frame.getColorMap();
 	int width = frame.getFrameWidth();
 	int height = frame.getFrameHeight();
 
-	//std::cout << intrinsic << std::endl;
+	// std::cout << intrinsic << std::endl;
 
 	// subscripts: g - global coordinate system | c - camera coordinate system | i - image space
-	// short notations: V - vector | P - point | sdf - signed distance field value | tsdf - truncated sdf 
+	// short notations: V - vector | P - point | sdf - signed distance field value | tsdf - truncated sdf
 	Vector3f Pg, Pc, ray, normal;
 	Vector2i Pi;
 	Vector4uc color;
@@ -231,16 +232,16 @@ void Volume::integrate(Frame frame) {
 				Pc = frame.projectPointIntoFrame(Pg);
 				Pi = frame.projectOntoImgPlane(Pc);
 
-				//std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
+				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
 
-				//Pg = gridToWorld(i, j, k);
-				//Pc = Frame::transformPoint(Pg, worldToCamera);
-				//Pi = Frame::perspectiveProjection(Pc, intrinsic);
+				// Pg = gridToWorld(i, j, k);
+				// Pc = Frame::transformPoint(Pg, worldToCamera);
+				// Pi = Frame::perspectiveProjection(Pc, intrinsic);
 
-				//std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
+				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
 
-				if (frame.containsImgPoint(Pi)) {
-
+				if (frame.containsImgPoint(Pi))
+				{
 					// get the depth of the point
 					index = Pi[1] * width + Pi[0];
 					depth = depthMap[index];
@@ -248,7 +249,7 @@ void Volume::integrate(Frame frame) {
 					if (depth == MINF)
 						continue;
 
-					//std::cout << "Odbok!!\n";
+					// std::cout << "Odbok!!\n";
 
 					// calculate the sdf value
 					lambda = (Pc / Pc[2]).norm();
@@ -258,8 +259,8 @@ void Volume::integrate(Frame frame) {
 					// compute the weight as the angle between the ray from the voxel point and normal of the associated frame point devided by depth
 					ray = (Pg - translation).normalized();
 					normal = frame.getNormalGlobal(index);
-			
-					cos_angle = - ray.dot(normal) / ray.norm() / normal.norm();
+
+					cos_angle = -ray.dot(normal) / ray.norm() / normal.norm();
 
 					tsdf_weight = 1; //-cos_angle / depth; // 1; // 1 / depth;
 
@@ -269,17 +270,20 @@ void Volume::integrate(Frame frame) {
 					color = vol[getPosFromTuple(i, j, k)].getColor();
 
 					// if we are doing the integration for the first time
-					if (value == std::numeric_limits<float>::max()) {
+					if (value == std::numeric_limits<float>::max())
+					{
 						value = 0;
 						weight = 0;
-						color = Vector4uc{ 0, 0, 0, 0 };
+						color = Vector4uc{0, 0, 0, 0};
 					}
 
 					// truncation of the sdf
-					if (sdf > 0) {
+					if (sdf > 0)
+					{
 						tsdf = std::min(1.0f, sdf / TRUNCATION);
 					}
-					else {
+					else
+					{
 						tsdf = std::max(-1.0f, sdf / TRUNCATION);
 					}
 
@@ -287,25 +291,20 @@ void Volume::integrate(Frame frame) {
 					vol[getPosFromTuple(i, j, k)].setValue((value * weight + tsdf * tsdf_weight) / (weight + tsdf_weight));
 					vol[getPosFromTuple(i, j, k)].setWeight(weight + tsdf_weight);
 
-					if (sdf <= TRUNCATION / 2 && sdf>= - TRUNCATION / 2) {
+					if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
+					{
 						vol[getPosFromTuple(i, j, k)].setColor(
-							Vector4uc{
-								(const unsigned char)((color[0] * weight + colorMap[4 * index + 0] * tsdf_weight) / (weight + tsdf_weight)),
-								(const unsigned char)((color[1] * weight + colorMap[4 * index + 1] * tsdf_weight) / (weight + tsdf_weight)),
-								(const unsigned char)((color[2] * weight + colorMap[4 * index + 2] * tsdf_weight) / (weight + tsdf_weight)),
-								(const unsigned char)((color[3] * weight + colorMap[4 * index + 3] * tsdf_weight) / (weight + tsdf_weight))
-							}
-						);
+							Vector4uc{(const unsigned char)((color[0] * weight + colorMap[4 * index + 0] * tsdf_weight) / (weight + tsdf_weight)),
+									  (const unsigned char)((color[1] * weight + colorMap[4 * index + 1] * tsdf_weight) / (weight + tsdf_weight)),
+									  (const unsigned char)((color[2] * weight + colorMap[4 * index + 2] * tsdf_weight) / (weight + tsdf_weight)),
+									  (const unsigned char)((color[3] * weight + colorMap[4 * index + 3] * tsdf_weight) / (weight + tsdf_weight))});
 					}
-					
-					//std::cout << vol[getPosFromTuple(i, j, k)].getValue() << std::endl;
+
+					// std::cout << vol[getPosFromTuple(i, j, k)].getValue() << std::endl;
 				}
 			}
 		}
 	}
 
 	std::cout << "Integrate done!" << std::endl;
-
-
 }
-

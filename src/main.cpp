@@ -25,7 +25,7 @@
 // #define RESOLUTION 256, 256, 256
 // #define RESOLUTION 512, 512, 512
 // #define RESOLUTION 1024, 1024, 1024
-#define ICP_ITERATIONS 10
+#define ICP_ITERATIONS 20
 
 
 int main()
@@ -85,10 +85,10 @@ int main()
 
         if (frameCount == 0)
         {
-            // std::stringstream ss;
-            // ss << filenameBaseOut << frameCount << ".off";
-            // if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
-            //     return -1;
+            std::stringstream ss;
+            ss << filenameBaseOut << frameCount << ".off";
+            if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
+                return -1;
             // renderer.update(curFrame.getVertexMapGlobal(), (const char *)curFrame.getColorMap());
         }
         else
@@ -101,6 +101,14 @@ int main()
             curFrame.setExtrinsicMatrix(curFrame.getExtrinsicMatrix() * pose.inverse());
 
             volume.integrate(curFrame);
+
+            if (frameCount >= 1)
+            {
+                std::stringstream ss;
+                ss << filenameBaseOut << "raw_" << frameCount << ".off";
+                if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
+                    return -1;
+            }
 
             rc.changeFrame(curFrame);
             curFrame = rc.rayCast();
@@ -140,11 +148,18 @@ int main()
 
                 renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point);
 
-                if (frameCount % 5 == 0)
+                // {
+                //     std::stringstream ss;
+                //     ss << filenameBaseOutMC << frameCount << ".off";
+                //     mesh.writeMesh(ss.str());
+                // }
+
+                if (frameCount >= 1)
                 {
                     std::stringstream ss;
-                    ss << filenameBaseOutMC << frameCount << ".off";
-                    mesh.writeMesh(ss.str());
+                    ss << filenameBaseOut << frameCount << ".off";
+                    if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
+                        return -1;
                 }
             }
         }

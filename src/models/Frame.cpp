@@ -75,7 +75,8 @@ std::vector<vector4f>& Frame::getNormalMapGlobal_vector4f() {
 
 std::vector<Eigen::Vector3f>& Frame::getNormalMapGlobal() { return *mNormalsGlobal; }
 
-Eigen::Vector3f Frame::projectPointIntoFrame(const Eigen::Vector3f& point) {
+Eigen::Vector3f Frame::projectPointIntoFrame(const Eigen::Vector3f &point)
+{
     const auto rotation = extrinsicMatrix.block(0, 0, 3, 3);
     const auto translation = extrinsicMatrix.block(0, 3, 3, 1);
     return rotation * point + translation;
