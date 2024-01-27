@@ -22,6 +22,10 @@ float cpx = 0.0f;
 float cpy = 0.0f;
 float cpz = -1.0f;
 
+float lookat_x = 0.0f;
+float lookat_y = 0.0f;
+float lookat_z = 0.0f;
+
 bool initGL()
 {
     bool success = true;
@@ -33,7 +37,7 @@ bool initGL()
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(cpx, cpy, cpz, 0, 0, 0, 0, -1, 0);
+    gluLookAt(cpx, cpy, cpz, lookat_x, lookat_y, lookat_z, 0, -1, 0);
 
     return success;
 }
@@ -311,7 +315,7 @@ int run = true;
 int halt = false;
 int renderMode = 0;
 
-void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &vertices, Vector3f &minpt, Vector3f &maxpt, Volume &volume)
+static void inputHandling()
 {
     SDL_Event event = {};
     while (SDL_PollEvent(&event))
@@ -319,24 +323,55 @@ void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &ver
         switch (event.type)
         {
         case SDL_KEYDOWN:
+            // render control
             if (event.key.keysym.sym == SDLK_p)
-                run = false; 
+                run = false;
             else if (event.key.keysym.sym == SDLK_c)
                 run = true, halt = false;
             else if (event.key.keysym.sym == SDLK_n)
                 run = halt = true;
-            else if (event.key.keysym.sym == SDLK_LEFT)
-                cpx -= 0.1f;
-            else if (event.key.keysym.sym == SDLK_RIGHT)
-                cpx += 0.1f;
+            // render mode control
             else if (event.key.keysym.sym == SDLK_r)
-                renderMode = (renderMode + 1) % 2;
+                renderMode = (renderMode + 1) % 3;
+            // movement control
+            else if (event.key.keysym.sym == SDLK_a)
+                cpx -= 0.1f, lookat_x -= 0.1f;
+            else if (event.key.keysym.sym == SDLK_d)
+                cpx += 0.1f, lookat_x += 0.1f;
+            else if (event.key.keysym.sym == SDLK_w)
+                cpz += 0.1f, lookat_z += 0.1f;
+            else if (event.key.keysym.sym == SDLK_s)
+                cpz -= 0.1f, lookat_z -= 0.1f;
+            // else if (event.key.keysym.sym == SDLK_LEFT)
+            //     cpx -= 0.1f;
+            // else if (event.key.keysym.sym == SDLK_RIGHT)
+            //     cpx += 0.1f;
             break;
         case SDL_KEYUP:
         default:
             break;
         }
     }
+}
+
+void drawCameraTrajectory(std::vector<vector4f> &camPos)
+{
+    glPointSize(10.0f);
+    glBegin(GL_POINTS);
+
+    glColor3f(1, 0, 0);
+    glVertex3f(0, 0, 0);
+    for (auto &p : camPos)
+        glVertex3f(p[0], p[1], p[2]);
+
+    glEnd();
+}
+
+void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &vertices, Vector3f &minpt, Vector3f &maxpt,
+                      Volume &volume,
+                      std::vector<vector4f> &camPos)
+{
+    inputHandling();
 
     // Clear color buffer
     glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
@@ -344,17 +379,20 @@ void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &ver
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(cpx, cpy, cpz, 0, 0, 0, 0, -1, 0);
+    gluLookAt(cpx, cpy, cpz, lookat_x, lookat_y, lookat_z, 0, -1, 0);
 
     drawAxis();
 
-
     drawBoundingBox(minpt, maxpt, 0);
+
+    drawCameraTrajectory(camPos);
 
     if (renderMode == 0)
         drawMesh(triangles, vertices);
-    else
+    else if (renderMode == 1)
         drawVoxel(volume);
+    else
+        ;
 
     SDL_GL_SwapWindow(gWindow);
 }

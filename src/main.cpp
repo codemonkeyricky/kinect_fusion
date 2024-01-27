@@ -62,6 +62,28 @@ int main()
     Matrix4f identity = Matrix4f::Identity(4, 4); // initial estimate
     Matrix4f pose = identity;
 
+    // ensor([ [ 0.8758, 0.3425, -0.3400, 1.3137 ],
+    //         [ 0.4820, -0.5867, 0.6508, 0.8486 ],
+    //         [ 0.0234, -0.7338, -0.6789, 1.5192 ],
+    //         [ 0.0000, 0.0000, 0.0000, 1.0000 ] ])
+
+    // pose(0, 0) = 0.8758f;
+    // pose(0, 1) = 0.3425f;
+    // pose(0, 2) = -0.3400f;
+    // pose(0, 3) = 1.3137f;
+
+    // pose(1, 0) = 0.4820f; 
+    // pose(1, 1) = -0.5867f; 
+    // pose(1, 2) = 0.6508f; 
+    // pose(1, 3) = 0.8486f;
+
+    // pose(2, 0) = 0.0234f; 
+    // pose(2, 1) = -0.7338f; 
+    // pose(2, 2) = -0.6789f;
+    // pose(2, 3) = 1.5192f;
+
+    // pose(3, 3) = 1.0f; 
+
     Renderer renderer;
 
     while (frameCount < MAX_FRAME_NUM && sensor.ProcessNextFrame())
@@ -92,13 +114,22 @@ int main()
             //     return -1;
 
             // renderer.update(curFrame.getVertexMapGlobal(), (const char *)curFrame.getColorMap());
+
+            vector4f p; // = {0, 0, 0, 0};
+            camPos.push_back(p); 
         }
         else
         {
             ICP icp(prevFrame, curFrame, DISTANCE_THRESHOLD, ANGLE_THRESHOLD);
             pose = icp.estimatePose(pose, ICP_ITERATIONS);
             std::cout << pose << std::endl;
-            // camPos.push_back({pose[]})
+
+            vector4f p;
+            p[0] = pose(0, 3);
+            p[1] = pose(1, 3);
+            p[2] = pose(2, 3);
+            p[3] = 0;
+            camPos.push_back(p);
 
             curFrame.setExtrinsicMatrix(curFrame.getExtrinsicMatrix() * pose.inverse());
 
@@ -136,15 +167,15 @@ int main()
                 {
                     if (halt)
                         run = false;
-                    renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point, volume);
+                    renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point, volume, camPos);
                 } while (!run);
-            }
 
-            // {
-            //     std::stringstream ss;
-            //     ss << filenameBaseOutMC << frameCount << ".off";
-            //     mesh.writeMesh(ss.str());
-            // }
+                {
+                    std::stringstream ss;
+                    ss << filenameBaseOutMC << frameCount << ".off";
+                    mesh.writeMesh(ss.str());
+                }
+            }
 
             // if (frameCount >= 1)
             // {
