@@ -85,10 +85,11 @@ int main()
 
         if (frameCount == 0)
         {
-            std::stringstream ss;
-            ss << filenameBaseOut << frameCount << ".off";
-            if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
-                return -1;
+            // std::stringstream ss;
+            // ss << filenameBaseOut << frameCount << ".off";
+            // if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
+            //     return -1;
+
             // renderer.update(curFrame.getVertexMapGlobal(), (const char *)curFrame.getColorMap());
         }
         else
@@ -102,17 +103,16 @@ int main()
 
             volume.integrate(curFrame);
 
-            if (frameCount >= 1)
-            {
-                std::stringstream ss;
-                ss << filenameBaseOut << "raw_" << frameCount << ".off";
-                if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
-                    return -1;
-            }
+            // if (frameCount >= 1)
+            // {
+            //     std::stringstream ss;
+            //     ss << filenameBaseOut << "raw_" << frameCount << ".off";
+            //     if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
+            //         return -1;
+            // }
 
             rc.changeFrame(curFrame);
             curFrame = rc.rayCast();
-
 
             // if (frameCount % 2 == 1)
             {
@@ -146,7 +146,7 @@ int main()
                 */
                 std::cout << "Marching Cubes done! " << mesh.getVertices().size() << " " << mesh.getTriangles().size() << std::endl;
 
-                renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point);
+                renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point, volume);
 
                 // {
                 //     std::stringstream ss;
@@ -154,13 +154,13 @@ int main()
                 //     mesh.writeMesh(ss.str());
                 // }
 
-                if (frameCount >= 1)
-                {
-                    std::stringstream ss;
-                    ss << filenameBaseOut << frameCount << ".off";
-                    if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
-                        return -1;
-                }
+                // if (frameCount >= 1)
+                // {
+                //     std::stringstream ss;
+                //     ss << filenameBaseOut << frameCount << ".off";
+                //     if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
+                //         return -1;
+                // }
             }
         }
 

@@ -18,6 +18,10 @@ bool gRenderQuad = true;
 const int SCREEN_WIDTH = 2560;
 const int SCREEN_HEIGHT = 1440;
 
+float cpx = 0.0f;
+float cpy = 0.0f;
+float cpz = -1.0f;
+
 bool initGL()
 {
     bool success = true;
@@ -29,8 +33,7 @@ bool initGL()
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    // gluLookAt(1, -3.0, 1.0, 0, 0, 0, 0, 0, 1);
-    gluLookAt(0, 0.0, -3, 0, 0, 0, 0, -1, 0);
+    gluLookAt(cpx, cpy, cpz, 0, 0, 0, 0, -1, 0);
 
     return success;
 }
@@ -206,7 +209,8 @@ void drawMesh(std::vector<Triangle> &triangles, std::vector<Vertex> &vertices)
     glEnd();
 }
 
-void drawBoundingBox(Vector3f &minpt, Vector3f &maxpt)
+// __attribute__((optimize("O0")))
+void drawBoundingBox(Vector3f &minpt, Vector3f &maxpt, bool drawGrid)
 {
     glBegin(GL_LINES);
 
@@ -261,10 +265,55 @@ void drawBoundingBox(Vector3f &minpt, Vector3f &maxpt)
     glVertex3f(nx, py, pz);
     glVertex3f(nx, py, nz);
 
+    if (drawGrid)
+    {
+        // assume 128
+        float ddx = (px - nx) / 128;
+        float ddy = (py - ny) / 128;
+        float ddz = (pz - nz) / 128;
+
+        for (auto dx = nx; dx <= px; dx += ddx)
+            for (auto dy = ny; dy <= py; dy += ddy)
+                glVertex3f(dx, dy, pz),
+                    glVertex3f(dx, dy, nz);
+    }
+
     glEnd();
 }
 
-void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &vertices, Vector3f &minpt, Vector3f &maxpt)
+// __attribute__((optimize("O0")))
+static void drawVoxel(Volume &volume)
+{
+    glPointSize(5.0f); 
+    glBegin(GL_POINTS);
+
+    for (auto x = 0; x < volume.getDimX(); ++x)
+        for (auto y = 0; y < volume.getDimY(); ++y)
+            for (auto z = 0; z < volume.getDimZ(); ++z)
+            {
+                auto world = volume.gridToWorld(x, y, z);
+                auto v = volume.get(x, y, z);
+                if (v.getValue() != std::numeric_limits<float>::max())
+                    if (-1.0f < v.getValue() && v.getValue() < 1.0f)
+                        if (v.getValue() == 0)
+                        {
+                            // if (v.getValue() > 0)
+                            //     glColor3f(0, v.getValue(), 0);
+                            // else
+                            //     glColor3f(v.getValue() * -1.0f, 0, 0);
+
+                            if (x < 100 && y < 50)
+                                glColor3f(0, 1, 0);
+                            else
+                                glColor3f(1, 0, 0);
+
+                            glVertex3f(world[0], world[1], world[2]);
+                    }
+            }
+    glEnd();
+}
+
+void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &vertices, Vector3f &minpt, Vector3f &maxpt, Volume &volume)
 {
     SDL_Event event = {};
     SDL_PollEvent(&event);
@@ -273,11 +322,17 @@ void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &ver
     glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
     glClear(GL_COLOR_BUFFER_BIT);
 
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    gluLookAt(cpx, cpy, cpz, 0, 0, 0, 0, -1, 0);
+
     drawAxis();
 
-    drawBoundingBox(minpt, maxpt);
+    drawVoxel(volume);
 
-    drawMesh(triangles, vertices);
+    drawBoundingBox(minpt, maxpt, 0);
+
+    // drawMesh(triangles, vertices);
 
     SDL_GL_SwapWindow(gWindow);
 }

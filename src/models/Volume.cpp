@@ -51,7 +51,7 @@ void Volume::compute_ddx_dddx()
 void Volume::zeroOutMemory()
 {
 	for (uint i1 = 0; i1 < dx * dy * dz; i1++)
-		vol[i1] = Voxel(std::numeric_limits<float>::max(), 0.0f, Vector4uc{ 0, 0, 0, 0 });
+		vol[i1] = Voxel(std::numeric_limits<float>::max(), 0.0f, Vector4uc{0, 0, 0, 0});
 }
 
 //! Returns the Data.
@@ -198,6 +198,7 @@ float Volume::trilinearInterpolation(const Vector3f& p) {
 }
 
 // using given frame calculate TSDF values for all voxels in the grid
+// __attribute__((optimize("O0")))
 void Volume::integrate(Frame frame)
 {
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
@@ -275,6 +276,7 @@ void Volume::integrate(Frame frame)
 						value = 0;
 						weight = 0;
 						color = Vector4uc{0, 0, 0, 0};
+
 					}
 
 					// truncation of the sdf
@@ -289,6 +291,12 @@ void Volume::integrate(Frame frame)
 
 					// the new value and weight is the running average
 					vol[getPosFromTuple(i, j, k)].setValue((value * weight + tsdf * tsdf_weight) / (weight + tsdf_weight));
+
+					if (vol[getPosFromTuple(i, j, k)].getValue() == 0 && i < 100 && j < 50)
+					{
+						volatile int dummy = 0;
+					}
+
 					vol[getPosFromTuple(i, j, k)].setWeight(weight + tsdf_weight);
 
 					if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
