@@ -295,28 +295,48 @@ static void drawVoxel(Volume &volume)
                 auto v = volume.get(x, y, z);
                 if (v.getValue() != std::numeric_limits<float>::max())
                     if (-1.0f < v.getValue() && v.getValue() < 1.0f)
-                        if (v.getValue() == 0)
-                        {
-                            // if (v.getValue() > 0)
-                            //     glColor3f(0, v.getValue(), 0);
-                            // else
-                            //     glColor3f(v.getValue() * -1.0f, 0, 0);
+                    {
+                        if (v.getValue() > 0)
+                            glColor3f(0, v.getValue(), 0);
+                        else
+                            glColor3f(v.getValue() * -1.0f, 0, 0);
 
-                            if (x < 100 && y < 50)
-                                glColor3f(0, 1, 0);
-                            else
-                                glColor3f(1, 0, 0);
-
-                            glVertex3f(world[0], world[1], world[2]);
+                        glVertex3f(world[0], world[1], world[2]);
                     }
             }
     glEnd();
 }
 
+int run = true;
+int halt = false;
+int renderMode = 0;
+
 void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &vertices, Vector3f &minpt, Vector3f &maxpt, Volume &volume)
 {
     SDL_Event event = {};
-    SDL_PollEvent(&event);
+    while (SDL_PollEvent(&event))
+    {
+        switch (event.type)
+        {
+        case SDL_KEYDOWN:
+            if (event.key.keysym.sym == SDLK_p)
+                run = false; 
+            else if (event.key.keysym.sym == SDLK_c)
+                run = true, halt = false;
+            else if (event.key.keysym.sym == SDLK_n)
+                run = halt = true;
+            else if (event.key.keysym.sym == SDLK_LEFT)
+                cpx -= 0.1f;
+            else if (event.key.keysym.sym == SDLK_RIGHT)
+                cpx += 0.1f;
+            else if (event.key.keysym.sym == SDLK_r)
+                renderMode = (renderMode + 1) % 2;
+            break;
+        case SDL_KEYUP:
+        default:
+            break;
+        }
+    }
 
     // Clear color buffer
     glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
@@ -328,11 +348,13 @@ void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &ver
 
     drawAxis();
 
-    drawVoxel(volume);
 
     drawBoundingBox(minpt, maxpt, 0);
 
-    // drawMesh(triangles, vertices);
+    if (renderMode == 0)
+        drawMesh(triangles, vertices);
+    else
+        drawVoxel(volume);
 
     SDL_GL_SwapWindow(gWindow);
 }

@@ -27,6 +27,7 @@
 // #define RESOLUTION 1024, 1024, 1024
 #define ICP_ITERATIONS 20
 
+extern int run, halt;
 
 int main()
 {
@@ -121,47 +122,37 @@ int main()
                 std::cout << "Marching Cubes started..." << std::endl;
                 // extract the zero iso-surface using marching cubes
                 SimpleMesh mesh;
-
                 std::unordered_map<Vector3i, bool, matrix_hash<Vector3i>> visitedVoxels = volume.getVisitedVoxels();
-
                 for (auto it = visitedVoxels.begin(); it != visitedVoxels.end(); it++)
                 {
                     // std::cout << it->first << std::endl;
                     Vector3i voxelCoords = it->first;
                     ProcessVolumeCell(&volume, voxelCoords[0], voxelCoords[1], voxelCoords[2], 0.00f, &mesh);
                 }
-                /*
-                for (unsigned int x = 0; x < volume.getDimX() - 1; x++)
-                {
-                    //std::cerr << "Marching Cubes on slice " << x << " of " << volume.getDimX() << std::endl;
-
-                    for (unsigned int y = 0; y < volume.getDimY() - 1; y++)
-                    {
-                        for (unsigned int z = 0; z < volume.getDimZ() - 1; z++)
-                        {
-                            ProcessVolumeCell(&volume, x, y, z, 0.00f, &mesh);
-                        }
-                    }
-                }
-                */
                 std::cout << "Marching Cubes done! " << mesh.getVertices().size() << " " << mesh.getTriangles().size() << std::endl;
 
-                renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point, volume);
 
-                // {
-                //     std::stringstream ss;
-                //     ss << filenameBaseOutMC << frameCount << ".off";
-                //     mesh.writeMesh(ss.str());
-                // }
-
-                // if (frameCount >= 1)
-                // {
-                //     std::stringstream ss;
-                //     ss << filenameBaseOut << frameCount << ".off";
-                //     if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
-                //         return -1;
-                // }
+                do
+                {
+                    if (halt)
+                        run = false;
+                    renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point, volume);
+                } while (!run);
             }
+
+            // {
+            //     std::stringstream ss;
+            //     ss << filenameBaseOutMC << frameCount << ".off";
+            //     mesh.writeMesh(ss.str());
+            // }
+
+            // if (frameCount >= 1)
+            // {
+            //     std::stringstream ss;
+            //     ss << filenameBaseOut << frameCount << ".off";
+            //     if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
+            //         return -1;
+            // }
         }
 
         prevFrame = curFrame;
