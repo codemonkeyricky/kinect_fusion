@@ -125,8 +125,7 @@ Frame &RayCaster::rayCast()
 					break;
 				}
 
-#if 1
-				else if (vol.get(ray_previous_int).getValue() == 0)
+				else if (vol.get(ray_previous_int).getTSDF() == 0)
 				{
 					v = vol.gridToWorld(ray_previous);
 					// n = vol.calculateNormal(ray_previous);
@@ -149,7 +148,7 @@ Frame &RayCaster::rayCast()
 					break;
 				}
 
-				else if (vol.get(ray_current_int).getValue() == 0)
+				else if (vol.get(ray_current_int).getTSDF() == 0)
 				{
 					v = vol.gridToWorld(ray_current);
 					// n = vol.calculateNormal(ray_current);
@@ -170,12 +169,11 @@ Frame &RayCaster::rayCast()
 
 					break;
 				}
-				#endif
 
-				else if (vol.get(ray_previous_int).getValue() != std::numeric_limits<float>::max() &&
-						 vol.get(ray_previous_int).getValue() > 0 &&
-						 vol.get(ray_current_int).getValue() != std::numeric_limits<float>::max() &&
-						 vol.get(ray_current_int).getValue() < 0)
+				else if (vol.get(ray_previous_int).getTSDF() != std::numeric_limits<float>::max() &&
+						 vol.get(ray_previous_int).getTSDF() > 0 &&
+						 vol.get(ray_current_int).getTSDF() != std::numeric_limits<float>::max() &&
+						 vol.get(ray_current_int).getTSDF() < 0)
 				{
 					sdf_1 = vol.trilinearInterpolation(ray_previous);
 					sdf_2 = vol.trilinearInterpolation(ray_current);

@@ -25,7 +25,7 @@ public:
 
 	Voxel(float value_, float weight_, Vector4uc color_) : value{ value_ }, weight{ weight_ }, color{ color_ } {}
 
-	float getValue() {
+	float getTSDF() {
 		return value;
 	}
 
@@ -37,7 +37,7 @@ public:
 		return color;
 	}
 
-	void setValue(float v) {
+	void setTSDF(float v) {
 		value = v;
 	}
 

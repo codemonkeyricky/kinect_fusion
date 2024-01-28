@@ -499,50 +499,50 @@ bool ProcessVolumeCell(Volume* vol, int x, int y, int z, float iso, SimpleMesh* 
 	vox = vol->get(x + 1, y, z);
 
 	cell.p[0] = Vector3f(tmp[0], tmp[1], tmp[2]);
-	cell.val[0] = vox.getValue();
+	cell.val[0] = vox.getTSDF();
 	cell.color[0] = vox.getColor();
 
 	tmp = vol->gridToWorld(x, y, z);
 	vox = vol->get(x, y, z);
 	cell.p[1] = Vector3f(tmp[0], tmp[1], tmp[2]);
-	cell.val[1] = vox.getValue();
+	cell.val[1] = vox.getTSDF();
 	cell.color[1] = vox.getColor();
 
 
 	tmp = vol->gridToWorld(x, y + 1, z);
 	vox = vol->get(x, y + 1, z);
 	cell.p[2] = Vector3f(tmp[0], tmp[1], tmp[2]);
-	cell.val[2] = vox.getValue();
+	cell.val[2] = vox.getTSDF();
 	cell.color[2] = vox.getColor();
 
 	tmp = vol->gridToWorld(x + 1, y + 1, z);
 	vox = vol->get(x + 1, y + 1, z);
 	cell.p[3] = Vector3f(tmp[0], tmp[1], tmp[2]);
-	cell.val[3] = vox.getValue();
+	cell.val[3] = vox.getTSDF();
 	cell.color[3] = vox.getColor();
 
 	tmp = vol->gridToWorld(x + 1, y, z + 1);
 	vox = vol->get(x + 1, y, z + 1);
 	cell.p[4] = Vector3f(tmp[0], tmp[1], tmp[2]);
-	cell.val[4] = vox.getValue();
+	cell.val[4] = vox.getTSDF();
 	cell.color[4] = vox.getColor();
 
 	tmp = vol->gridToWorld(x, y, z + 1);
 	vox = vol->get(x, y, z + 1);
 	cell.p[5] = Vector3f(tmp[0], tmp[1], tmp[2]);
-	cell.val[5] = vox.getValue();
+	cell.val[5] = vox.getTSDF();
 	cell.color[5] = vox.getColor();
 
 	tmp = vol->gridToWorld(x, y + 1, z + 1);
 	vox = vol->get(x, y + 1, z + 1);
 	cell.p[6] = Vector3f(tmp[0], tmp[1], tmp[2]);
-	cell.val[6] = vox.getValue();
+	cell.val[6] = vox.getTSDF();
 	cell.color[6] = vox.getColor();
 
 	tmp = vol->gridToWorld(x + 1, y + 1, z + 1);
 	vox = vol->get(x + 1, y + 1, z + 1);
 	cell.p[7] = Vector3f(tmp[0], tmp[1], tmp[2]);
-	cell.val[7] = vox.getValue();
+	cell.val[7] = vox.getTSDF();
 	cell.color[7] = vox.getColor();
 
 

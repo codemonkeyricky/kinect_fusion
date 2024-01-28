@@ -297,13 +297,13 @@ static void drawVoxel(Volume &volume)
             {
                 auto world = volume.gridToWorld(x, y, z);
                 auto v = volume.get(x, y, z);
-                if (v.getValue() != std::numeric_limits<float>::max())
-                    if (-1.0f < v.getValue() && v.getValue() < 1.0f)
+                if (v.getTSDF() != std::numeric_limits<float>::max())
+                    if (-1.0f < v.getTSDF() && v.getTSDF() < 1.0f)
                     {
-                        if (v.getValue() > 0)
-                            glColor3f(0, v.getValue(), 0);
+                        if (v.getTSDF() > 0)
+                            glColor3f(0, v.getTSDF(), 0);
                         else
-                            glColor3f(v.getValue() * -1.0f, 0, 0);
+                            glColor3f(v.getTSDF() * -1.0f, 0, 0);
 
                         glVertex3f(world[0], world[1], world[2]);
                     }

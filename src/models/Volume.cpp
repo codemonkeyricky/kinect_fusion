@@ -55,7 +55,7 @@ void Volume::zeroOutMemory()
 }
 
 //! Returns the Data.
-Voxel* Volume::getData()
+Voxel *Volume::getData()
 {
 	return vol;
 };
@@ -151,14 +151,14 @@ float Volume::trilinearInterpolation(const Vector3f& p) {
 	Vector3i start = intCoords(p);
 	float c000, c001, c010, c011, c100, c101, c110, c111;
 
-	c000 = get(start[0] + 0, start[1] + 0, start[2] + 0).getValue();
-	c100 = get(start[0] + 1, start[1] + 0, start[2] + 0).getValue();
-	c001 = get(start[0] + 0, start[1] + 0, start[2] + 1).getValue();
-	c101 = get(start[0] + 1, start[1] + 0, start[2] + 1).getValue();
-	c010 = get(start[0] + 0, start[1] + 1, start[2] + 0).getValue();
-	c110 = get(start[0] + 1, start[1] + 1, start[2] + 0).getValue();
-	c011 = get(start[0] + 0, start[1] + 1, start[2] + 1).getValue();
-	c111 = get(start[0] + 1, start[1] + 1, start[2] + 1).getValue();
+	c000 = get(start[0] + 0, start[1] + 0, start[2] + 0).getTSDF();
+	c100 = get(start[0] + 1, start[1] + 0, start[2] + 0).getTSDF();
+	c001 = get(start[0] + 0, start[1] + 0, start[2] + 1).getTSDF();
+	c101 = get(start[0] + 1, start[1] + 0, start[2] + 1).getTSDF();
+	c010 = get(start[0] + 0, start[1] + 1, start[2] + 0).getTSDF();
+	c110 = get(start[0] + 1, start[1] + 1, start[2] + 0).getTSDF();
+	c011 = get(start[0] + 0, start[1] + 1, start[2] + 1).getTSDF();
+	c111 = get(start[0] + 1, start[1] + 1, start[2] + 1).getTSDF();
 
 	if (
 		c000 == std::numeric_limits<float>::max() || 
@@ -266,7 +266,7 @@ void Volume::integrate(Frame frame)
 					tsdf_weight = 1; //-cos_angle / depth; // 1; // 1 / depth;
 
 					// get the previous value and weight
-					value = vol[getPosFromTuple(i, j, k)].getValue();
+					value = vol[getPosFromTuple(i, j, k)].getTSDF();
 					weight = vol[getPosFromTuple(i, j, k)].getWeight();
 					color = vol[getPosFromTuple(i, j, k)].getColor();
 
@@ -290,9 +290,9 @@ void Volume::integrate(Frame frame)
 					}
 
 					// the new value and weight is the running average
-					vol[getPosFromTuple(i, j, k)].setValue((value * weight + tsdf * tsdf_weight) / (weight + tsdf_weight));
+					vol[getPosFromTuple(i, j, k)].setTSDF((value * weight + tsdf * tsdf_weight) / (weight + tsdf_weight));
 
-					if (vol[getPosFromTuple(i, j, k)].getValue() == 0 && i < 100 && j < 50)
+					if (vol[getPosFromTuple(i, j, k)].getTSDF() == 0 && i < 100 && j < 50)
 					{
 						volatile int dummy = 0;
 					}
@@ -308,7 +308,7 @@ void Volume::integrate(Frame frame)
 									  (const unsigned char)((color[3] * weight + colorMap[4 * index + 3] * tsdf_weight) / (weight + tsdf_weight))});
 					}
 
-					// std::cout << vol[getPosFromTuple(i, j, k)].getValue() << std::endl;
+					// std::cout << vol[getPosFromTuple(i, j, k)].getTSDF() << std::endl;
 				}
 			}
 		}
