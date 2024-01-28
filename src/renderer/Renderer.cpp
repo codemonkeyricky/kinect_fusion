@@ -18,9 +18,9 @@ bool gRenderQuad = true;
 const int SCREEN_WIDTH = 2560;
 const int SCREEN_HEIGHT = 1440;
 
-float cpx = -1.0f;
+float cpx = 0.0f;
 float cpy = 0.0f;
-float cpz = 0.0f;
+float cpz = -1.0f;
 
 float lookat_x = 0.0f;
 float lookat_y = 0.0f;
@@ -353,7 +353,7 @@ static void inputHandling()
                 if (viewMode == 0)
                     cpz = -1;
                 else if (viewMode == 1)
-                    cpy = -1;
+                    cpy = -2;
                 else if (viewMode == 2)
                     cpx = -1;
             }
@@ -363,6 +363,9 @@ static void inputHandling()
             //     cpx -= 0.1f;
             // else if (event.key.keysym.sym == SDLK_RIGHT)
             //     cpx += 0.1f;
+
+            else if (event.key.keysym.sym == SDLK_ESCAPE)
+                exit(0);
             break;
         case SDL_KEYUP:
         default:
