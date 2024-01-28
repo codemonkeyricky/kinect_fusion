@@ -18,9 +18,9 @@ bool gRenderQuad = true;
 const int SCREEN_WIDTH = 2560;
 const int SCREEN_HEIGHT = 1440;
 
-float cpx = 0.0f;
+float cpx = -1.0f;
 float cpy = 0.0f;
-float cpz = -1.0f;
+float cpz = 0.0f;
 
 float lookat_x = 0.0f;
 float lookat_y = 0.0f;
@@ -314,6 +314,8 @@ static void drawVoxel(Volume &volume)
 int run = true;
 int halt = false;
 int renderMode = 0;
+int viewMode = 0;
+int writeMesh = 0;
 
 static void inputHandling()
 {
@@ -342,6 +344,21 @@ static void inputHandling()
                 cpz += 0.1f, lookat_z += 0.1f;
             else if (event.key.keysym.sym == SDLK_s)
                 cpz -= 0.1f, lookat_z -= 0.1f;
+            // reset viewport
+            else if (event.key.keysym.sym == SDLK_v)
+            {
+                viewMode = (viewMode + 1) % 3;
+                lookat_x = lookat_y = lookat_z = 0;
+                cpx = cpy = cpz = 0;
+                if (viewMode == 0)
+                    cpz = -1;
+                else if (viewMode == 1)
+                    cpy = -1;
+                else if (viewMode == 2)
+                    cpx = -1;
+            }
+            else if (event.key.keysym.sym == SDLK_m)
+                writeMesh = !writeMesh;
             // else if (event.key.keysym.sym == SDLK_LEFT)
             //     cpx -= 0.1f;
             // else if (event.key.keysym.sym == SDLK_RIGHT)
@@ -385,14 +402,14 @@ void Renderer::update(std::vector<Triangle> &triangles, std::vector<Vertex> &ver
 
     drawBoundingBox(minpt, maxpt, 0);
 
-    drawCameraTrajectory(camPos);
-
     if (renderMode == 0)
         drawMesh(triangles, vertices);
     else if (renderMode == 1)
         drawVoxel(volume);
     else
         ;
+
+    drawCameraTrajectory(camPos);
 
     SDL_GL_SwapWindow(gWindow);
 }

@@ -81,8 +81,10 @@ public:
 
 	bool ProcessNextFrame()
 	{
-		if (m_currentIdx == -1)	m_currentIdx = 0;
-		else m_currentIdx += m_increment;
+		if (m_currentIdx == -1)
+			m_currentIdx = 0;
+		else
+			m_currentIdx += m_increment;
 
 		if ((unsigned int)m_currentIdx >= (unsigned int)m_filenameColorImages.size()) return false;
 

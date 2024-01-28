@@ -27,7 +27,7 @@
 // #define RESOLUTION 1024, 1024, 1024
 #define ICP_ITERATIONS 20
 
-extern int run, halt;
+extern int run, halt, writeMesh;
 
 int main()
 {
@@ -170,6 +170,7 @@ int main()
                     renderer.update(mesh.getTriangles(), mesh.getVertices(), min_point, max_point, volume, camPos);
                 } while (!run);
 
+                if (writeMesh)
                 {
                     std::stringstream ss;
                     ss << filenameBaseOutMC << frameCount << ".off";

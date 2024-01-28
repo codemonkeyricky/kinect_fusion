@@ -125,7 +125,7 @@ Frame &RayCaster::rayCast()
 					break;
 				}
 
-#if 0
+#if 1
 				else if (vol.get(ray_previous_int).getValue() == 0)
 				{
 					v = vol.gridToWorld(ray_previous);
@@ -234,7 +234,7 @@ Frame &RayCaster::rayCast()
 
 	// TODO: update _vector4f variants too
 
-	// frame.mVerticesGlobal = output_vertices_global;
+	frame.mVerticesGlobal = output_vertices_global;
 
 	for (auto k = 0; k < 640 * 480; ++k)
 		for (auto i = 0; i < 3; ++i)
