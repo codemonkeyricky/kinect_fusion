@@ -5,14 +5,16 @@
 Volume::Volume() {}
 
 //! Initializes an empty volume dataset.
-Volume::Volume(Vector3f& min_, Vector3f& max_, uint dx_, uint dy_, uint dz_, uint dim)
+Volume::Volume(Vector3f &min_, Vector3f &max_, float voxel_size, uint dim)
 {
 	min = min_;
 	max = max_;
 	diag = max - min;
-	dx = dx_;
-	dy = dy_;
-	dz = dz_;
+
+	dx = (max[0] - min[0]) / voxel_size;
+	dy = (max[1] - min[1]) / voxel_size;
+	dz = (max[2] - min[2]) / voxel_size;
+
 	m_dim = dim;
 	vol = NULL;
 

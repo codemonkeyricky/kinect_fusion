@@ -92,10 +92,9 @@ private:
 	std::unordered_map<Vector3i, bool, matrix_hash<Vector3i>> visitedVoxels;
 
 public:
-	
 	Volume();
 	//! Initializes an empty volume dataset.
-	Volume(Vector3f& min_, Vector3f& max_, uint dx_ = 10, uint dy_ = 10, uint dz_ = 10, uint dim = 1);
+	Volume(Vector3f &min_, Vector3f &max_, float voxel_size = 0.025f, uint dim = 1);
 
 	~Volume();
 

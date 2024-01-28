@@ -21,7 +21,8 @@
 #define MAX_FRAME_NUM 800
 #define MIN_POINT -3.5f, -2.0f, -1.0f
 #define MAX_POINT 0.5f, 2.0f, 2.5f
-#define RESOLUTION 128, 128, 128
+#define VOXEL_SIZE 0.025f
+// #define RESOLUTION 128, 128, 128
 // #define RESOLUTION 256, 256, 256
 // #define RESOLUTION 512, 512, 512
 // #define RESOLUTION 1024, 1024, 1024
@@ -57,7 +58,7 @@ int main()
     Vector3f min_point = Vector3f{MIN_POINT};
     Vector3f max_point = Vector3f{MAX_POINT};
 
-    Volume volume = Volume(min_point, max_point, RESOLUTION, 3);
+    Volume volume = Volume(min_point, max_point, VOXEL_SIZE, 3);
     RayCaster rc = RayCaster(volume);
     Matrix4f identity = Matrix4f::Identity(4, 4); // initial estimate
     Matrix4f pose = identity;
