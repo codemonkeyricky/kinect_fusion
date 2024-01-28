@@ -200,7 +200,7 @@ float Volume::trilinearInterpolation(const Vector3f& p) {
 }
 
 // using given frame calculate TSDF values for all voxels in the grid
-// __attribute__((optimize("O0")))
+__attribute__((optimize("O0")))
 void Volume::integrate(Frame frame)
 {
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
@@ -219,7 +219,7 @@ void Volume::integrate(Frame frame)
 	Vector3f Pg, Pc, ray, normal;
 	Vector2i Pi;
 	Vector4uc color;
-	float depth, lambda, sdf, tsdf, tsdf_weight, value, weight, cos_angle;
+	float depth, lambda, sdf, tsdf_weight, tsdf, weight, cos_angle;
 	uint index;
 
 	std::cout << "Integrate starting..." << std::endl;
@@ -252,65 +252,45 @@ void Volume::integrate(Frame frame)
 					if (depth == MINF)
 						continue;
 
-					// std::cout << "Odbok!!\n";
-
 					// calculate the sdf value
 					lambda = (Pc / Pc[2]).norm();
-
-					sdf = depth - ((Pg - translation) / lambda).norm();
-
-					// compute the weight as the angle between the ray from the voxel point and normal of the associated frame point devided by depth
-					ray = (Pg - translation).normalized();
-					normal = frame.getNormalGlobal(index);
-
-					cos_angle = -ray.dot(normal) / ray.norm() / normal.norm();
-
-					tsdf_weight = 1; //-cos_angle / depth; // 1; // 1 / depth;
+					sdf = (-1.f) * ((1.f / lambda) * Pg.norm() - depth);
 
 					// get the previous value and weight
-					value = vol[getPosFromTuple(i, j, k)].getTSDF();
+					tsdf = vol[getPosFromTuple(i, j, k)].getTSDF();
 					weight = vol[getPosFromTuple(i, j, k)].getWeight();
 					color = vol[getPosFromTuple(i, j, k)].getColor();
 
 					// if we are doing the integration for the first time
-					if (value == std::numeric_limits<float>::max())
+					if (tsdf == std::numeric_limits<float>::max())
 					{
-						value = 0;
+						tsdf = 0;
 						weight = 0;
 						color = Vector4uc{0, 0, 0, 0};
-
 					}
 
-					// truncation of the sdf
-					if (sdf > 0)
+					if (sdf >= -TRUNCATION)
 					{
-						tsdf = std::min(1.0f, sdf / TRUNCATION);
+						float current_tsdf = std::min(1.0f, sdf / TRUNCATION);
+						float current_weight = 1.0f;
+						float old_tsdf = vol[getPosFromTuple(i, j, k)].getTSDF();
+						float old_weight = vol[getPosFromTuple(i, j, k)].getWeight();
+
+						auto updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
+						auto updated_weight = old_weight + current_weight;
+
+						vol[getPosFromTuple(i, j, k)].setTSDF(updated_tsdf);
+						vol[getPosFromTuple(i, j, k)].setWeight(updated_weight);
+
+						if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
+						{
+							vol[getPosFromTuple(i, j, k)].setColor(
+								Vector4uc{(const unsigned char)((color[0] * weight + colorMap[4 * index + 0] * tsdf_weight) / (weight + tsdf_weight)),
+										  (const unsigned char)((color[1] * weight + colorMap[4 * index + 1] * tsdf_weight) / (weight + tsdf_weight)),
+										  (const unsigned char)((color[2] * weight + colorMap[4 * index + 2] * tsdf_weight) / (weight + tsdf_weight)),
+										  (const unsigned char)((color[3] * weight + colorMap[4 * index + 3] * tsdf_weight) / (weight + tsdf_weight))});
+						}
 					}
-					else
-					{
-						tsdf = std::max(-1.0f, sdf / TRUNCATION);
-					}
-
-					// the new value and weight is the running average
-					vol[getPosFromTuple(i, j, k)].setTSDF((value * weight + tsdf * tsdf_weight) / (weight + tsdf_weight));
-
-					if (vol[getPosFromTuple(i, j, k)].getTSDF() == 0 && i < 100 && j < 50)
-					{
-						volatile int dummy = 0;
-					}
-
-					vol[getPosFromTuple(i, j, k)].setWeight(weight + tsdf_weight);
-
-					if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
-					{
-						vol[getPosFromTuple(i, j, k)].setColor(
-							Vector4uc{(const unsigned char)((color[0] * weight + colorMap[4 * index + 0] * tsdf_weight) / (weight + tsdf_weight)),
-									  (const unsigned char)((color[1] * weight + colorMap[4 * index + 1] * tsdf_weight) / (weight + tsdf_weight)),
-									  (const unsigned char)((color[2] * weight + colorMap[4 * index + 2] * tsdf_weight) / (weight + tsdf_weight)),
-									  (const unsigned char)((color[3] * weight + colorMap[4 * index + 3] * tsdf_weight) / (weight + tsdf_weight))});
-					}
-
-					// std::cout << vol[getPosFromTuple(i, j, k)].getTSDF() << std::endl;
 				}
 			}
 		}

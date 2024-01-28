@@ -125,6 +125,7 @@ Frame &RayCaster::rayCast()
 					break;
 				}
 
+#if 1
 				else if (vol.get(ray_previous_int).getTSDF() == 0)
 				{
 					v = vol.gridToWorld(ray_previous);
@@ -169,6 +170,7 @@ Frame &RayCaster::rayCast()
 
 					break;
 				}
+#endif
 
 				else if (vol.get(ray_previous_int).getTSDF() != std::numeric_limits<float>::max() &&
 						 vol.get(ray_previous_int).getTSDF() > 0 &&
