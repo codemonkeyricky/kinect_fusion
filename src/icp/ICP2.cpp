@@ -201,8 +201,10 @@ std::vector<std::pair<size_t, size_t>> ICP::findIndicesOfCorrespondingPoints(
 
     auto stop = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+    #if 0
     std::cout << "### ICP duration: " << duration.count() << std::endl;
     std::cout << "### ICP cnt: " << indicesOfCorrespondingPoints.size() << std::endl;
+    #endif
 
     return indicesOfCorrespondingPoints;
 }
@@ -310,11 +312,11 @@ void ICP::findIndicesOfCorrespondingPoints2(
     auto duration2 = std::chrono::duration_cast<std::chrono::microseconds>(time2 - time1);
     auto duration3 = std::chrono::duration_cast<std::chrono::microseconds>(time3 - time2);
     auto duration4 = std::chrono::duration_cast<std::chrono::microseconds>(time4 - time3);
-    std::cout << "### ICP2 duration #1: " << duration1.count() << " us" << std::endl;
-    std::cout << "### ICP2 duration #2: " << duration2.count() << " us" << std::endl;
+    // std::cout << "### ICP2 duration #1: " << duration1.count() << " us" << std::endl;
+    // std::cout << "### ICP2 duration #2: " << duration2.count() << " us" << std::endl;
     // std::cout << "### ICP2 duration #3: " << duration3.count() << " us" << std::endl;
     // std::cout << "### ICP2 duration #4: " << duration4.count() << " us, pixel copied = " << cnt << std::endl;
-    std::cout << "### ICP2 cnt: " << cnt << std::endl;
+    // std::cout << "### ICP2 cnt: " << cnt << std::endl;
 
     correspondenceIds.resize(cnt);
 }

@@ -52,10 +52,12 @@ Matrix4f ICP::estimatePose(
 
         assert(points_ref.size());
 
+#if ICP_DEBUG
         std::cout << "# corresponding points: " << points_ref.size()
                   << std::endl;
         std::cout << "# total number of points: "
                   << curFrame.getVertexMap().size() << std::endl;
+#endif
 
         int nPoints = points_ref.size();
         Eigen::Matrix3f rotationEP = estimatedPose.block(0, 0, 3, 3);
@@ -93,7 +95,9 @@ Matrix4f ICP::estimatePose(
 
         auto stop = std::chrono::high_resolution_clock::now();
         auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+#if ICP_DEBUG
         std::cout << "### pose esitmation : " << duration.count() << " us" << std::endl;
+#endif
 
         const float alpha = x(0), beta = x(1), gamma = x(2);
         Matrix3f rotation =
@@ -106,7 +110,9 @@ Matrix4f ICP::estimatePose(
         curentPose.block<3, 3>(0, 0) = rotation;
         curentPose.block<3, 1>(0, 3) = translation;
         estimatedPose = curentPose * estimatedPose;
+#if ICP_DEBUG
         std::cout << "### estimatedPose : " << estimatedPose(0) << ", " << estimatedPose(1) << ", " << estimatedPose(2) << ", " << std::endl;
+#endif
     }
     return estimatedPose;
 }
