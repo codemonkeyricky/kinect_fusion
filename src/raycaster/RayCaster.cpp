@@ -125,7 +125,7 @@ Frame &RayCaster::rayCast()
 					break;
 				}
 
-#if 1
+#if 0
 				else if (vol.get(ray_previous_int).getTSDF() == 0)
 				{
 					v = vol.gridToWorld(ray_previous);

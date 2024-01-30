@@ -107,6 +107,11 @@ static void drawAxis()
     glEnd();
 }
 
+static bool isBlack(const char *colorMap, int k)
+{
+    return !colorMap[k * 4 + 0] && !colorMap[k * 4 + 1] && !colorMap[k * 4 + 2];
+}
+
 void Renderer::update(std::vector<Eigen::Vector3f> &vertices, const char *colorMap)
 {
     // Clear color buffer
@@ -141,20 +146,21 @@ void Renderer::update(std::vector<Eigen::Vector3f> &vertices, const char *colorM
                 float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
                 // std::cout << d2 << std::endl;
                 if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
-                {
-                    glBegin(GL_TRIANGLES); // Drawing Using Triangles
+                    // if (!isBlack(colorMap, i0) && !isBlack(colorMap, i0) && !isBlack(colorMap, i0))
+                    {
+                        glBegin(GL_TRIANGLES); // Drawing Using Triangles
 
-                    glColor3ub(colorMap[i0 * 4 + 0], colorMap[i0 * 4 + 1], colorMap[i0 * 4 + 2]);
-                    glVertex3f(vertices[i0][0], vertices[i0][1], vertices[i0][2]);
+                        glColor3ub(colorMap[i0 * 4 + 0], colorMap[i0 * 4 + 1], colorMap[i0 * 4 + 2]);
+                        glVertex3f(vertices[i0][0], vertices[i0][1], vertices[i0][2]);
 
-                    glColor3ub(colorMap[i1 * 4 + 0], colorMap[i1 * 4 + 1], colorMap[i1 * 4 + 2]);
-                    glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
+                        glColor3ub(colorMap[i1 * 4 + 0], colorMap[i1 * 4 + 1], colorMap[i1 * 4 + 2]);
+                        glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
 
-                    glColor3ub(colorMap[i2 * 4 + 0], colorMap[i2 * 4 + 1], colorMap[i2 * 4 + 2]);
-                    glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
+                        glColor3ub(colorMap[i2 * 4 + 0], colorMap[i2 * 4 + 1], colorMap[i2 * 4 + 2]);
+                        glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
 
-                    glEnd();
-                }
+                        glEnd();
+                    }
             }
             if (valid1 && valid2 && valid3)
             {
@@ -162,19 +168,20 @@ void Renderer::update(std::vector<Eigen::Vector3f> &vertices, const char *colorM
                 float d1 = (vertices.at(i3) - vertices.at(i2)).norm();
                 float d2 = (vertices.at(i1) - vertices.at(i2)).norm();
                 if (edgeThreshold > d0 && edgeThreshold > d1 && edgeThreshold > d2)
-                {
-                    glBegin(GL_TRIANGLES); // Drawing Using Triangles
+                    // if (!isBlack(colorMap, i1) && !isBlack(colorMap, i3) && !isBlack(colorMap, i2))
+                    {
+                        glBegin(GL_TRIANGLES); // Drawing Using Triangles
 
-                    glColor3b(colorMap[i1 * 4 + 0], colorMap[i1 * 4 + 1], colorMap[i1 * 4 + 2]);
-                    glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
+                        glColor3b(colorMap[i1 * 4 + 0], colorMap[i1 * 4 + 1], colorMap[i1 * 4 + 2]);
+                        glVertex3f(vertices[i1][0], vertices[i1][1], vertices[i1][2]);
 
-                    glColor3b(colorMap[i3 * 4 + 0], colorMap[i3 * 4 + 1], colorMap[i3 * 4 + 2]);
-                    glVertex3f(vertices[i3][0], vertices[i3][1], vertices[i3][2]);
+                        glColor3b(colorMap[i3 * 4 + 0], colorMap[i3 * 4 + 1], colorMap[i3 * 4 + 2]);
+                        glVertex3f(vertices[i3][0], vertices[i3][1], vertices[i3][2]);
 
-                    glColor3b(colorMap[i2 * 4 + 0], colorMap[i2 * 4 + 1], colorMap[i2 * 4 + 2]);
-                    glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
+                        glColor3b(colorMap[i2 * 4 + 0], colorMap[i2 * 4 + 1], colorMap[i2 * 4 + 2]);
+                        glVertex3f(vertices[i2][0], vertices[i2][1], vertices[i2][2]);
 
-                    glEnd();
+                        glEnd();
                 }
             }
         }

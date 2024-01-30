@@ -53,7 +53,8 @@ void Volume::compute_ddx_dddx()
 void Volume::zeroOutMemory()
 {
 	for (uint i1 = 0; i1 < dx * dy * dz; i1++)
-		vol[i1] = Voxel(std::numeric_limits<float>::max(), 0.0f, Vector4uc{0, 0, 0, 0});
+		// vol[i1] = Voxel(std::numeric_limits<float>::max(), 0.0f, Vector4uc{0, 0, 0, 0});
+		vol[i1] = Voxel(1.0f, 0.0f, Vector4uc{0, 0, 0, 0});
 }
 
 //! Returns the Data.
@@ -249,27 +250,16 @@ void Volume::integrate(Frame frame)
 					index = Pi[1] * width + Pi[0];
 					depth = depthMap[index];
 
-					if (depth == MINF)
-						continue;
-
 					// calculate the sdf value
 					lambda = (Pc / Pc[2]).norm();
-					sdf = (-1.f) * ((1.f / lambda) * Pg.norm() - depth);
+					sdf = depth - ((Pg - translation) / lambda).norm();
 
 					// get the previous value and weight
 					tsdf = vol[getPosFromTuple(i, j, k)].getTSDF();
 					weight = vol[getPosFromTuple(i, j, k)].getWeight();
 					color = vol[getPosFromTuple(i, j, k)].getColor();
 
-					// if we are doing the integration for the first time
-					if (tsdf == std::numeric_limits<float>::max())
-					{
-						tsdf = 0;
-						weight = 0;
-						color = Vector4uc{0, 0, 0, 0};
-					}
-
-					if (sdf >= -TRUNCATION)
+					if (sdf >= -TRUNCATION && depth != MINF)
 					{
 						float current_tsdf = std::min(1.0f, sdf / TRUNCATION);
 						float current_weight = 1.0f;
@@ -285,10 +275,10 @@ void Volume::integrate(Frame frame)
 						if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
 						{
 							vol[getPosFromTuple(i, j, k)].setColor(
-								Vector4uc{(const unsigned char)((color[0] * weight + colorMap[4 * index + 0] * tsdf_weight) / (weight + tsdf_weight)),
-										  (const unsigned char)((color[1] * weight + colorMap[4 * index + 1] * tsdf_weight) / (weight + tsdf_weight)),
-										  (const unsigned char)((color[2] * weight + colorMap[4 * index + 2] * tsdf_weight) / (weight + tsdf_weight)),
-										  (const unsigned char)((color[3] * weight + colorMap[4 * index + 3] * tsdf_weight) / (weight + tsdf_weight))});
+								Vector4uc{(const unsigned char)((color[0] * old_weight + colorMap[4 * index + 0] * current_weight) / (old_weight + current_weight)),
+										  (const unsigned char)((color[1] * old_weight + colorMap[4 * index + 1] * current_weight) / (old_weight + current_weight)),
+										  (const unsigned char)((color[2] * old_weight + colorMap[4 * index + 2] * current_weight) / (old_weight + current_weight)),
+										  (const unsigned char)((color[3] * old_weight + colorMap[4 * index + 3] * current_weight) / (old_weight + current_weight))});
 						}
 					}
 				}
