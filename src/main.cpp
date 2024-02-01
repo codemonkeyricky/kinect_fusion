@@ -3,9 +3,10 @@
 #include <array>
 #include <fstream>
 #include <iostream>
+#include <chrono>
 
 #include "ICP.h"
-#include "RayCaster.h"
+#include "Raycaster.h"
 #include "Ray.h"
 #include "Frame.h"
 #include "Volume.h"
@@ -121,9 +122,15 @@ int main()
         }
         else
         {
-            ICP icp(prevFrame, curFrame, DISTANCE_THRESHOLD, ANGLE_THRESHOLD);
-            pose = icp.estimatePose(pose, ICP_ITERATIONS);
-            std::cout << pose << std::endl;
+            {
+                auto icp_start = std::chrono::high_resolution_clock::now();
+
+                ICP icp(prevFrame, curFrame, DISTANCE_THRESHOLD, ANGLE_THRESHOLD);
+                pose = icp.estimatePose(pose, ICP_ITERATIONS);
+
+                auto icp_end = std::chrono::high_resolution_clock::now();
+                std::cout << "ICP latency: " << std::chrono::duration_cast<std::chrono::microseconds>(icp_end - icp_start).count() << " us" << std::endl;
+            }
 
             vector4f p;
             p[0] = pose(0, 3);
@@ -134,24 +141,28 @@ int main()
 
             curFrame.setExtrinsicMatrix(curFrame.getExtrinsicMatrix() * pose.inverse());
 
-            volume.integrate(curFrame);
-
-            // if (frameCount >= 1)
-            // {
-            //     std::stringstream ss;
-            //     ss << filenameBaseOut << "raw_" << frameCount << ".off";
-            //     if (!curFrame.writeMesh(ss.str(), EDGE_THRESHOLD))
-            //         return -1;
-            // }
-
-            rc.changeFrame(curFrame);
-            curFrame = rc.rayCast();
-
-            // if (frameCount % 2 == 1)
             {
-                // TODO
+                auto integrate_start = std::chrono::high_resolution_clock::now();
 
-                std::cout << "Marching Cubes started..." << std::endl;
+                volume.integrate(curFrame);
+
+                auto integrate_end = std::chrono::high_resolution_clock::now();
+                std::cout << "Integration latency: " << std::chrono::duration_cast<std::chrono::microseconds>(integrate_end - integrate_start).count() << " us" << std::endl;
+            }
+
+            {
+                auto raycast_start = std::chrono::high_resolution_clock::now();
+                
+                rc.changeFrame(curFrame);
+                curFrame = rc.raycast();
+
+                auto raycast_end = std::chrono::high_resolution_clock::now();
+                std::cout << "Raycast latency: " << std::chrono::duration_cast<std::chrono::microseconds>(raycast_end - raycast_start).count() << " us" << std::endl;
+            }
+
+            {
+                auto mc_start = std::chrono::high_resolution_clock::now();
+
                 // extract the zero iso-surface using marching cubes
                 SimpleMesh mesh;
                 std::unordered_map<Vector3i, bool, matrix_hash<Vector3i>> visitedVoxels = volume.getVisitedVoxels();
@@ -161,8 +172,9 @@ int main()
                     Vector3i voxelCoords = it->first;
                     ProcessVolumeCell(&volume, voxelCoords[0], voxelCoords[1], voxelCoords[2], 0.00f, &mesh);
                 }
-                std::cout << "Marching Cubes done! " << mesh.getVertices().size() << " " << mesh.getTriangles().size() << std::endl;
 
+                auto mc_end = std::chrono::high_resolution_clock::now();
+                std::cout << "MarchingCube latency: " << std::chrono::duration_cast<std::chrono::microseconds>(mc_end - mc_start).count() << " us" << std::endl;
 
                 do
                 {

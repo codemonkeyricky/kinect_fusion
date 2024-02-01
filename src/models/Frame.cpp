@@ -36,7 +36,7 @@ Frame::Frame(const float* depthMap, const BYTE* colorMap,
     setExtrinsicMatrix(depthExtrinsics);
 
     intrinsicMatrix = depthIntrinsics;
-    std::cout << "Frame created!" << std::endl;
+    // std::cout << "Frame created!" << std::endl;
 }
 
 Eigen::Vector3f Frame::getVertexGlobal(size_t idx) const { return mVerticesGlobal->at(idx); }
@@ -331,7 +331,7 @@ bool Frame::writeMesh(const std::string &filename, float edgeThreshold)
     // Close file.
     outFile.close();
 
-    std::cout << "Mesh written!" << std::endl;
+    // std::cout << "Mesh written!" << std::endl;
 
     return true;
 }

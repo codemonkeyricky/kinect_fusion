@@ -150,7 +150,7 @@ Vector3f Volume::calculateNormal(const Vector3f& point) {
 }
 
 // trilinear interpolation of a point in voxel grid coordinates to get SDF at the point
-float Volume::trilinearInterpolation(const Vector3f& p) {
+float Volume::trilinearInterpolation(const Vector3f& p) const {
 	Vector3i start = intCoords(p);
 	float c000, c001, c010, c011, c100, c101, c110, c111;
 
@@ -163,6 +163,7 @@ float Volume::trilinearInterpolation(const Vector3f& p) {
 	c011 = get(start[0] + 0, start[1] + 1, start[2] + 1).getTSDF();
 	c111 = get(start[0] + 1, start[1] + 1, start[2] + 1).getTSDF();
 
+#if 0
 	if (
 		c000 == std::numeric_limits<float>::max() || 
 		c001 == std::numeric_limits<float>::max() || 
@@ -174,6 +175,7 @@ float Volume::trilinearInterpolation(const Vector3f& p) {
 		c111 == std::numeric_limits<float>::max()
 	)
 		return std::numeric_limits<float>::max();
+#endif
 
 	float xd, yd, zd;
 
@@ -201,7 +203,7 @@ float Volume::trilinearInterpolation(const Vector3f& p) {
 }
 
 // using given frame calculate TSDF values for all voxels in the grid
-__attribute__((optimize("O0")))
+// __attribute__((optimize("O0")))
 void Volume::integrate(Frame frame)
 {
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
@@ -223,7 +225,7 @@ void Volume::integrate(Frame frame)
 	float depth, lambda, sdf, tsdf_weight, tsdf, weight, cos_angle;
 	uint index;
 
-	std::cout << "Integrate starting..." << std::endl;
+	// std::cout << "Integrate starting..." << std::endl;
 
 	for (int k = 0; k < dz; k++)
 	{
@@ -286,5 +288,5 @@ void Volume::integrate(Frame frame)
 		}
 	}
 
-	std::cout << "Integrate done!" << std::endl;
+	// std::cout << "Integrate done!" << std::endl;
 }

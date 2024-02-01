@@ -25,7 +25,7 @@ public:
 
 	Voxel(float value_, float weight_, Vector4uc color_) : value{ value_ }, weight{ weight_ }, color{ color_ } {}
 
-	float getTSDF() {
+	inline float getTSDF() const {
 		return value;
 	}
 
@@ -123,8 +123,8 @@ public:
 	Vector3f calculateNormal(const Vector3f& point);
 
 	// trilinear interpolation of a point in voxel grid coordinates to get SDF at the point
-	float trilinearInterpolation(const Vector3f& p);
-		
+	float trilinearInterpolation(const Vector3f &p) const;
+
 	// using given frame calculate TSDF values for all voxels in the grid
 	void integrate(Frame frame);
 

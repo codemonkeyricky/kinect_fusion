@@ -20,7 +20,7 @@ public:
 
 	void changeFrame(Frame& frame);
 	void changeVolume(Volume& vol);
-	Frame& rayCast();
+	Frame& raycast();
 };
 
 #endif // !RAYCASTER_H

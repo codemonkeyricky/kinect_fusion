@@ -1,6 +1,6 @@
 #include <chrono>
 
-#include "RayCaster.h"
+#include "Raycaster.h"
 
 //RayCaster::RayCaster() {}
 
@@ -25,7 +25,7 @@ void mistake(
 }
 
 // __attribute__((optimize("O0")))
-Frame &RayCaster::rayCast()
+Frame &RayCaster::raycast()
 {
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
 	const Matrix4f cameraToWorld = worldToCamera.inverse();
@@ -52,10 +52,12 @@ Frame &RayCaster::rayCast()
 	Vector3f p, v, n;
 	uint index;
 
-	std::cout << "RayCast starting..." << std::endl;
+	// std::cout << "RayCast starting..." << std::endl;
 	int cnt = 0;
 
 	auto t0 = std::chrono::high_resolution_clock::now();
+
+	std::vector<std::array<Vector3f, 2>> rays(640 * 480);
 
 	for (int i = 0; i < height; i++)
 	{
@@ -94,6 +96,18 @@ Frame &RayCaster::rayCast()
 				continue;
 			}
 
+			rays[i * 640 + j] = {ray_start, ray_dir};
+		}
+	}
+
+	auto t1 = std::chrono::high_resolution_clock::now();
+
+	for (auto i = 0; i < rays.size(); ++i)
+	{
+		{
+			Vector3f ray_start = rays[i][0];
+			Vector3f ray_dir = rays[i][1];
+
 			Ray ray = Ray(ray_start, ray_dir);
 
 			ray_current = ray_start;
@@ -106,7 +120,7 @@ Frame &RayCaster::rayCast()
 			}
 
 			while (true)
-			{ // vol.isPointInVolume(ray_current)) {
+			{
 				ray_previous = ray_current;
 				ray_previous_int = ray_current_int;
 
@@ -169,11 +183,9 @@ Frame &RayCaster::rayCast()
 
 					break;
 				}
-
-				else if (vol.get(ray_previous_int).getTSDF() != std::numeric_limits<float>::max() &&
-						 vol.get(ray_previous_int).getTSDF() > 0 &&
-						 vol.get(ray_current_int).getTSDF() != std::numeric_limits<float>::max() &&
-						 vol.get(ray_current_int).getTSDF() < 0)
+				else if (vol.get(ray_previous_int).getTSDF() < 0 && vol.get(ray_current_int).getTSDF() > 0)
+					break;
+				else if (vol.get(ray_previous_int).getTSDF() > 0 && vol.get(ray_current_int).getTSDF() < 0)
 				{
 					sdf_1 = vol.trilinearInterpolation(ray_previous);
 					sdf_2 = vol.trilinearInterpolation(ray_current);
@@ -226,9 +238,14 @@ Frame &RayCaster::rayCast()
 		}
 	}
 
-	auto t1 = std::chrono::high_resolution_clock::now();
+	auto t2 = std::chrono::high_resolution_clock::now();
 
-	std::cout << "### raycast cnt: " << cnt << std::endl;
+	auto d1 = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
+	auto d2 = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+	std::cout << "### raycast xform: " << d1.count() << " us" << std::endl;
+	std::cout << "### raycast raycast: " << d2.count() << " us" << std::endl;
+
+	// std::cout << "### raycast cnt: " << cnt << std::endl;
 
 	// TODO: update _vector4f variants too
 
@@ -249,13 +266,6 @@ Frame &RayCaster::rayCast()
 	for (auto k = 0; k < 640 * 480; ++k)
 		for (auto i = 0; i < 3; ++i)
 			(*frame.mNormalGlobal_vector4f)[k][i] = (*frame.mNormalsGlobal)[k](i);
-
-	auto t2 = std::chrono::high_resolution_clock::now();
-
-	std::cout << "RayCast done!" << std::endl;
-
-	auto d1 = std::chrono::duration_cast<std::chrono::microseconds>(t1 - t0);
-	std::cout << "### raycast #d1: " << d1.count() << " us" << std::endl;
 
 	return frame;
 }
