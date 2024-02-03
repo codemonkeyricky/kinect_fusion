@@ -21,3 +21,13 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
 )
+
+cc_binary(
+    name = "octree",
+    srcs = [
+        "octree.cpp",
+    ],
+    deps = [
+    ],
+    visibility = ["//visibility:public"],
+)
