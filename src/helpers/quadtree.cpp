@@ -121,7 +121,7 @@ int sum_x(int vx, int tlx, int trx,
 
     if (lx == tlx && trx == rx)
         return sum_y(vx,
-                     2, 0, m - 1, // v1 of y
+                     1, 0, m - 1, // v1 of y
                      ly, ry,
                      lz, rz);
 
@@ -136,40 +136,86 @@ int sum_x(int vx, int tlx, int trx,
                  ly, ry, lz, rz);
 }
 
-#if 0
-void update_y(int vx, int lx, int rx, int vy, int ly, int ry, int x, int y, int new_val)
+void update_z(int vx, int lx, int rx,
+              int vy, int ly, int ry,
+              int vz, int lz, int rz,
+              int x, int y, int z, int new_val)
 {
-    if (ly == ry)
+    array<int, 3> xx, yy, zz;
+    xx = {vx, lx, rx};
+    yy = {vy, ly, ry};
+    zz = {vz, lz, rz};
+
+    if (lz == rz)
     {
-        if (lx == rx)
-            t[vx][vy] = new_val;
+        if (lx == rx && ly == ry)
+            t[vx][vy][vz] = new_val;
+        else if (lx != rx)
+            t[vx][vy][vz] = t[vx * 2][vy][vz] + t[vx * 2 + 1][vy][vz];
+        else if (ly != ry)
+            t[vx][vy][vz] = t[vx][vy * 2][vz] + t[vx][vy * 2 + 1][vz];
         else
-            t[vx][vy] = t[vx * 2][vy] + t[vx * 2 + 1][vy];
+            t[vx][vy][vz] = t[vx * 2][vy * 2][vz] + t[vx * 2 + 1][vy * 2 + 1][vz];
     }
     else
     {
-        int my = (ly + ry) / 2;
-        if (y <= my)
-            update_y(vx, lx, rx, vy * 2, ly, my, x, y, new_val);
+        int mz = (lz + rz) / 2;
+        if (z <= mz)
+            update_z(vx, lx, rx,
+                     vy, ly, ry,
+                     vz * 2, lz, mz,
+                     x, y, z, new_val);
         else
-            update_y(vx, lx, rx, vy * 2 + 1, my + 1, ry, x, y, new_val);
-        t[vx][vy] = t[vx][vy * 2] + t[vx][vy * 2 + 1];
+            update_z(vx, lx, rx,
+                     vy, ly, ry,
+                     vz * 2 + 1, mz + 1, rz,
+                     x, y, z, new_val);
+
+        t[vx][vy][vz] = t[vx][vy][vz * 2] + t[vx][vy][vz * 2 + 1];
     }
 }
 
-void update_x(int vx, int lx, int rx, int x, int y, int new_val)
+void update_y(int vx, int lx, int rx,
+              int vy, int ly, int ry,
+              int x, int y, int z, int new_val)
+{
+    if (ly != ry)
+    {
+        int my = (ly + ry) / 2;
+        if (y <= my)
+            update_y(vx, lx, rx,     // range x
+                     vy * 2, ly, my, // reduce range y
+                     x, y, z, new_val);
+        else
+            update_y(vx, lx, rx,             // range x
+                     vy * 2 + 1, my + 1, ry, // reduce range y
+                     x, y, z, new_val);
+    }
+    update_z(vx, lx, rx,  // range x
+             vy, ly, ry,  // range y
+             1, 0, m - 1, // range z - all
+             x, y, z, new_val);
+}
+
+void update_x(int vx, int lx, int rx, int x, int y, int z, int new_val)
 {
     if (lx != rx)
     {
         int mx = (lx + rx) / 2;
         if (x <= mx)
-            update_x(vx * 2, lx, mx, x, y, new_val);
+            update_x(vx * 2,
+                     lx, mx,
+                     x, y, z, new_val);
         else
-            update_x(vx * 2 + 1, mx + 1, rx, x, y, new_val);
+            update_x(vx * 2 + 1,
+                     mx + 1, rx,
+                     x, y, z, new_val);
     }
-    update_y(vx, lx, rx, 1, 0, m - 1, x, y, new_val);
+    update_y(vx,
+             lx, rx,
+             1, 0, m - 1,
+             x, y, z, new_val);
 }
-#endif
 
 int main()
 {
@@ -177,12 +223,56 @@ int main()
     a = vector<vector<vector<int>>>(m, vector<vector<int>>(m, vector<int>(m)));
     t = vector<vector<vector<int>>>(4 * m, vector<vector<int>>(4 * m, vector<int>(4 * m)));
 
-    a[0][0][0] = 1;
-    a[1][1][0] = 1;
+    for (auto i = 0; i < 2; ++i)
+        for (auto j = 0; j < 2; ++j)
+            for (auto k = 0; k < 2; ++k)
+                a[i][j][k] = 1;
+
     build_x(1, 0, m - 1);
 
-    assert(sum_x(1, 0, m - 1,
-                 2, 3, 2, 3, 0, 3) == 0);
-    assert(sum_x(1, 0, m - 1,
-                 0, 3, 0, 3, 0, 3) == 2);
+    int sum;
+    sum = sum_x(1, 0, m - 1,
+                1, 1, 0, 1, 0, 1);
+    cout << sum << endl;
+    assert(sum == 4);
+
+    sum = sum_x(1, 0, m - 1,
+                0, 1, 0, 1, 0, 1);
+    cout << sum << endl;
+    assert(sum == 8);
+
+    for (auto i = 0; i < 2; ++i)
+        for (auto j = 0; j < 2; ++j)
+            for (auto k = 0; k < 2; ++k)
+                update_x(1, 0, m - 1,
+                         i, j, k, 0);
+
+    sum = sum_x(1, 0, m - 1,
+                0, 1, 0, 1, 0, 1);
+    cout << sum << endl;
+    assert(sum == 0);
+
+    update_x(1, 0, m - 1,
+             1, 1, 1, 1);
+
+    sum = sum_x(1, 0, m - 1,
+                0, 3, 0, 3, 0, 3);
+    cout << sum << endl;
+    assert(sum == 1);
+
+    sum = sum_x(1, 0, m - 1,
+                1, 1, 1, 1, 1, 1);
+    cout << sum << endl;
+    assert(sum == 1);
+
+    sum = sum_x(1, 0, m - 1,
+                0, 0, 0, 0, 0, 0);
+    cout << sum << endl;
+    assert(sum == 0);
+
+    sum = sum_x(1, 0, m - 1,
+                0, 1, 0, 1, 0, 1);
+    cout << sum << endl;
+    assert(sum == 1);
+
 }
