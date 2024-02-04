@@ -8,94 +8,101 @@ using namespace std;
 
 vector<vector<vector<float>>> tree;
 
-static void update(array<int, 3> v, array<int, 6> tltr, array<int, 6> lr, float value)
+static void update(array<int, 3> v, int k, array<int, 6> tltr, array<int, 6> lr, float value)
 {
-    auto [xtl, xtr, ytl, ytr, ztl, ztr] = tltr;
-    auto [xl, xr, yl, yr, zl, zr] = lr;
+    auto tl = tltr[k * 2];
+    auto tr = tltr[k * 2 + 1];
+    auto l = lr[k * 2];
+    auto r = lr[k * 2 + 1];
 
-    if (xl > xr || yl > yr || zl > zr)
+    if (l > r)
         return;
 
-    if (tltr == lr)
-        tree[v[0]][v[1]][v[2]] = value;
+    if (l == tl && r == tr)
+    {
+        if (k < 2)
+            update(v, k + 1, tltr, lr, value);
+        else
+            tree[v[0]][v[1]][v[2]] = value;
+    }
     else
     {
-        int xtm = (xtl + xtr) / 2;
-        int ytm = (ytl + ytr) / 2;
-        int ztm = (ztl + ztr) / 2;
+        int tm = (tl + tr) / 2;
 
-        update({v[0] * 2, v[1], v[2]},
-               {xtl, xtm,         ytl, ytr, ztl, ztr},
-               {xl, min(xr, xtm), yl, yr, zl, zr},
-               value);
+        auto vv = v;
+        auto vtltr = tltr;
+        auto vlr = lr;
 
-        update({v[0] * 2 + 1, v[1], v[2]},
-               {xtm + 1, xtr,       ytl, ytr, ztl, ztr},
-               {max(xl, xtm + 1),  xr, yl, yr, zl, zr},
-               value);
+        vv[k] *= 2;
+        vtltr[k * 2 + 1] = tm;
+        vlr[k * 2 + 1] = min(r, tm);
 
-        update({v[0], v[1] * 2, v[2]},
-               {xtl, xtr, ytl, ytm, ztl, ztr},
-               {xl, xr, yl, min(yr, ytm), zl, zr},
-               value);
+        update(vv, k, vtltr, vlr, value);
 
-        update({v[0], v[1] * 2 + 1, v[2]},
-               {xtl, xtr, ytm + 1, ytr, ztl, ztr},
-               {xl, xr, max(yl, ytm + 1), yr, zl, zr},
-               value);
+        vv = v;
+        vtltr = tltr;
+        vlr = lr;
 
-        update({v[0], v[1], v[2] * 2},
-               {xtl, xtr, ytl, ytr, ztl, ztm},
-               {xl, xr, yl, yr, zl, min(zr, ztm)},
-               value);
+        vv[k] = vv[k] * 2 + 1;
+        vtltr[k * 2] = tm + 1;
+        vlr[k * 2] = max(l, tm + 1);
 
-        update({v[0], v[1] * 2 + 1, v[2]},
-               {xtl, xtr, ytl, ytr, ztm + 1, ztr},
-               {xl, xr, yl, yr, max(zl, ztm + 1), zr},
-               value);
+        update(vv, k, vtltr, vlr, value);
+
+        vv = v;
+        vv[k] = vv[k] * 2;
+        auto a = tree[vv[0]][vv[1]][vv[2]];
+        vv = v;
+        vv[k] = vv[k * 2] + 1;
+        auto b = tree[vv[0]][vv[1]][vv[2]];
+
+        tree[v[0]][v[1]][v[2]] = min({a, b});
     }
 }
 
-static float query(array<int, 3> v, array<int, 6> v_range, array<int, 6> r_range)
+static float query(array<int, 3> v, int k, array<int, 6> tltr, array<int, 6> lr)
 {
-    auto [txl, txr, tyl, tyr, tzl, tzr] = v_range;
-	auto [rxl, rxr, ryl, ryr, rzl, rzr] = r_range;
+    auto tl = tltr[k * 2];
+    auto tr = tltr[k * 2 + 1];
+    auto l = lr[k * 2];
+    auto r = lr[k * 2 + 1];
 
-	if (rxl > rxr || ryl > ryr || rzl > rzr)
-		return 1;
+    if (l > r)
+        return 1;
 
-	if (v_range == r_range)
-		return tree[v[0]][v[1]][v[2]];
+    if (l == tl && r == tr)
+    {
+        if (k < 2)
+            return query(v, k + 1, tltr, lr);
+        else
+            return tree[v[0]][v[1]][v[2]];
+    }
+    else
+    {
+        int tm = (tl + tr) / 2;
 
-    int txm = (txl + txr) / 2;
-    int tym = (tyl + tyr) / 2;
-    int tzm = (tzl + tzr) / 2;
+        auto vv = v;
+        auto vtltr = tltr;
+        auto vlr = lr;
 
-    float a = query({v[0] * 2, v[1], v[2]},
-                    {txl, txm,              tyl, tyr, tzl, tzr},
-                    {rxl, min(rxr, txm),    ryl, ryr, rzl, rzr});
+        vv[k] *= 2;
+        vtltr[k * 2 + 1] = tm;
+        vlr[k * 2 + 1] = min(r, tm);
 
-    float b = query({v[0] * 2 + 1, v[1], v[2]},
-                    {txm + 1, txr,              tyl, tyr, tzl, tzr},
-                    {max(rxl, txm + 1), rxr,    ryl, ryr, rzl, rzr});
+        float a = query(vv, k, vtltr, vlr);
 
-    float c = query({v[0], v[1] * 2, v[2]},
-                    {txl, txr, tyl, tym,            tzl, tzr},
-                    {rxl, rxr, ryl, min(ryr, tym),  rzl, rzr});
+        vv = v;
+        vtltr = tltr;
+        vlr = lr;
 
-    float d = query({v[0], v[1] * 2 + 1, v[2]},
-                    {txl, txr, tym + 1, tyr,            tzl, tzr},
-                    {rxl, rxr, max(ryl, tym + 1), ryr,  rzl, rzr});
+        vv[k] = vv[k] * 2 + 1;
+        vtltr[k * 2] = tm + 1;
+        vlr[k * 2] = max(l, tm + 1);
 
-    float e = query({v[0], v[1], v[2] * 2},
-                    {txl, txr, tyl, tyr, tzl, tzm},
-                    {rxl, rxr, ryl, ryr, rzl, min(rzr, tzm)});
+        float b = query(vv, k, vtltr, vlr);
 
-    float f = query({v[0], v[1] * 2 + 1, v[2]},
-                    {txl, txr, tyl, tyr, tzm + 1, tzr},
-                    {rxl, rxr, ryl, ryr, max(rzl, tzm + 1), rzr});
-
-    return min({a, b, c, d, e, f});
+        return min({a, b});
+    }
 }
 
 int main()
@@ -105,9 +112,9 @@ int main()
 
     array<int, 3> v = {1, 1, 1};
     array<int, 6> tltr = {0, 128, 0, 128, 0, 128};
-    update(v, tltr, {3, 3, 3, 3, 3, 3}, -1);
+    update(v, 0, tltr, {3, 3, 3, 3, 3, 3}, -1);
 
-    auto vv = query(v, tltr, {3, 3, 3, 3, 3});
+    auto vv = query(v, 0, tltr, {3, 3, 3, 4, 3, 4});
     cout << vv << endl;
 }
 
@@ -142,7 +149,6 @@ int main()
 //     return max(query(v * 2, tl, tm, l, min(r, tm)),
 //                query(v * 2 + 1, tm + 1, tr, max(l, tm + 1), r));
 // }
-
 
 // int main()
 // {
