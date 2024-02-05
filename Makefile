@@ -6,3 +6,6 @@ dbg:
 
 run:
 	./bazel-bin/kinect_fusion
+
+test:
+	bazel test -c dbg --cxxopt=-std=c++14 --test_output=all //src/helpers/test:octree_test

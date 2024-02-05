@@ -63,32 +63,32 @@ void build_x(int vx, int lx, int rx)
 }
 #endif
 
-int Octree::sum_z(int vx, int vy, int vz,
+float Octree::sum_z(int vx, int vy, int vz,
                   int tlz, int trz,
                   int lz, int rz)
 {
     if (lz > rz)
-        return 0;
+        return 1e9;
 
     if (lz == tlz && trz == rz)
         return tree[vx][vy][vz];
 
     int tmz = (tlz + trz) / 2;
 
-    return sum_z(vx, vy, vz * 2,
-                 tlz, tmz,
-                 lz, min(rz, tmz)) +
-           sum_z(vx, vy, vz * 2 + 1,
-                 tmz + 1, rz,
-                 max(lz, tmz + 1), rz);
+    return min(sum_z(vx, vy, vz * 2,
+                     tlz, tmz,
+                     lz, min(rz, tmz)),
+               sum_z(vx, vy, vz * 2 + 1,
+                     tmz + 1, rz,
+                     max(lz, tmz + 1), rz));
 }
 
-int Octree::sum_y(int vx, int vy,
+float Octree::sum_y(int vx, int vy,
           int tly, int try_, int ly, int ry,
           int lz, int rz)
 {
     if (ly > ry)
-        return 0;
+        return 1e9;
 
     if (ly == tly && try_ == ry)
         return sum_z(vx, vy,
@@ -96,23 +96,23 @@ int Octree::sum_y(int vx, int vy,
                      lz, rz);
 
     int tmy = (tly + try_) / 2;
-    return sum_y(vx, vy * 2,
-                 tly, tmy, //  updated v range
-                 ly, min(ry, tmy),
-                 lz, rz) +
-           sum_y(vx, vy * 2 + 1,
-                 tmy + 1, try_, // updated v range
-                 max(ly, tmy + 1), ry,
-                 lz, rz);
+    return min(sum_y(vx, vy * 2,
+                     tly, tmy, //  updated v range
+                     ly, min(ry, tmy),
+                     lz, rz),
+               sum_y(vx, vy * 2 + 1,
+                     tmy + 1, try_, // updated v range
+                     max(ly, tmy + 1), ry,
+                     lz, rz));
 }
 
-int Octree::sum_x(int vx, int tlx, int trx,
+float Octree::sum_x(int vx, int tlx, int trx,
                   int lx, int rx,
                   int ly, int ry,
                   int lz, int rz)
 {
     if (lx > rx)
-        return 0;
+        return 1e9;
 
     if (lx == tlx && trx == rx)
         return sum_y(vx,
@@ -121,20 +121,20 @@ int Octree::sum_x(int vx, int tlx, int trx,
                      lz, rz);
 
     int tmx = (tlx + trx) / 2;
-    return sum_x(vx * 2,
-                 tlx, tmx, // updated range
-                 lx, min(rx, tmx),
-                 ly, ry, lz, rz) +
-           sum_x(vx * 2 + 1,
-                 tmx + 1, trx, // updated range
-                 max(lx, tmx + 1), rx,
-                 ly, ry, lz, rz);
+    return min(sum_x(vx * 2,
+                     tlx, tmx, // updated range
+                     lx, min(rx, tmx),
+                     ly, ry, lz, rz),
+               sum_x(vx * 2 + 1,
+                     tmx + 1, trx, // updated range
+                     max(lx, tmx + 1), rx,
+                     ly, ry, lz, rz));
 }
 
 void Octree::update_z(int vx, int lx, int rx,
                       int vy, int ly, int ry,
                       int vz, int lz, int rz,
-                      int x, int y, int z, int new_val)
+                      int x, int y, int z, float new_val)
 {
     array<int, 3> xx, yy, zz;
     xx = {vx, lx, rx};
@@ -146,11 +146,11 @@ void Octree::update_z(int vx, int lx, int rx,
         if (lx == rx && ly == ry)
             tree[vx][vy][vz] = new_val;
         else if (lx != rx)
-            tree[vx][vy][vz] = tree[vx * 2][vy][vz] + tree[vx * 2 + 1][vy][vz];
+            tree[vx][vy][vz] = min(tree[vx * 2][vy][vz], tree[vx * 2 + 1][vy][vz]);
         else if (ly != ry)
-            tree[vx][vy][vz] = tree[vx][vy * 2][vz] + tree[vx][vy * 2 + 1][vz];
+            tree[vx][vy][vz] = min(tree[vx][vy * 2][vz], tree[vx][vy * 2 + 1][vz]);
         else
-            tree[vx][vy][vz] = tree[vx * 2][vy * 2][vz] + tree[vx * 2 + 1][vy * 2 + 1][vz];
+            tree[vx][vy][vz] = min(tree[vx * 2][vy * 2][vz], tree[vx * 2 + 1][vy * 2 + 1][vz]);
     }
     else
     {
@@ -166,13 +166,13 @@ void Octree::update_z(int vx, int lx, int rx,
                      vz * 2 + 1, mz + 1, rz,
                      x, y, z, new_val);
 
-        tree[vx][vy][vz] = tree[vx][vy][vz * 2] + tree[vx][vy][vz * 2 + 1];
+        tree[vx][vy][vz] = min(tree[vx][vy][vz * 2], tree[vx][vy][vz * 2 + 1]);
     }
 }
 
 void Octree::update_y(int vx, int lx, int rx,
                       int vy, int ly, int ry,
-                      int x, int y, int z, int new_val)
+                      int x, int y, int z, float new_val)
 {
     if (ly != ry)
     {
@@ -192,7 +192,7 @@ void Octree::update_y(int vx, int lx, int rx,
              x, y, z, new_val);
 }
 
-void Octree::update_x(int vx, int lx, int rx, int x, int y, int z, int new_val)
+void Octree::update_x(int vx, int lx, int rx, int x, int y, int z, float new_val)
 {
     if (lx != rx)
     {
@@ -214,7 +214,7 @@ void Octree::update_x(int vx, int lx, int rx, int x, int y, int z, int new_val)
 
 Octree::Octree(int m) : m(m)
 {
-    tree = vvvi(4 * m, vvi(4 * m, vi(4 * m)));
+    tree = vvvf(4 * m, vvf(4 * m, vf(4 * m, 0)));
 }
 
 void Octree::update(int i, int j, int k, int val)
@@ -223,53 +223,8 @@ void Octree::update(int i, int j, int k, int val)
              i, j, k, val);
 }
 
-int Octree::sum(int lx, int rx, int ly, int ry, int lz, int rz)
+float Octree::mmin(int lx, int rx, int ly, int ry, int lz, int rz)
 {
     return sum_x(1, 0, m - 1,
                  lx, rx, ly, ry, lz, rz);
 }
-
-// int main()
-// {
-//     Octree tree(8);
-
-//     for (auto i = 0; i < 2; ++i)
-//         for (auto j = 0; j < 2; ++j)
-//             for (auto k = 0; k < 2; ++k)
-//                 tree.update(i, j, k, 1);
-
-//     int sum;
-//     sum = tree.sum(1, 1, 0, 1, 0, 1);
-//     cout << sum << endl;
-//     assert(sum == 4);
-
-//     sum = tree.sum(0, 1, 0, 1, 0, 1);
-//     cout << sum << endl;
-//     assert(sum == 8);
-
-//     for (auto i = 0; i < 2; ++i)
-//         for (auto j = 0; j < 2; ++j)
-//             for (auto k = 0; k < 2; ++k)
-//                 tree.update(i, j, k, 0);
-
-//     sum = tree.sum(0, 1, 0, 1, 0, 1);
-//     cout << sum << endl;
-//     assert(sum == 0);
-
-//     tree.update(1, 1, 1, 1);
-//     sum = tree.sum(0, 3, 0, 3, 0, 3);
-//     cout << sum << endl;
-//     assert(sum == 1);
-
-//     sum = tree.sum(1, 1, 1, 1, 1, 1);
-//     cout << sum << endl;
-//     assert(sum == 1);
-
-//     sum = tree.sum(0, 0, 0, 0, 0, 0);
-//     cout << sum << endl;
-//     assert(sum == 0);
-
-//     sum = tree.sum(0, 1, 0, 1, 0, 1);
-//     cout << sum << endl;
-//     assert(sum == 1);
-// }
