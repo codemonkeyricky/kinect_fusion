@@ -13,9 +13,17 @@ using vf = std::vector<float>;
 class Octree
 {
 public:
-    Octree(int m); 
+    struct Vox 
+    {
+        float v; 
+        float w; 
+        uint32_t unused; 
+    };
+
+    Octree(int m);
+    void build(Vox *vol, int m);
     void update(int i, int j, int k, int val);
-    float mmin(int lx, int rx, int ly, int ry, int lz, int rz);
+    float query_min(int lx, int rx, int ly, int ry, int lz, int rz);
 
 private:
     int m;
@@ -39,4 +47,11 @@ private:
     float sum_z(int vx, int vy, int vz,
                 int tlz, int trz,
                 int lz, int rz);
+
+    void build_x(Vox *vol, int vx, int lx, int rx);
+    void build_y(Vox *vol, int vx, int lx, int rx,
+                 int vy, int ly, int ry);
+    void build_z(Vox *vol, int vx, int lx, int rx,
+                 int vy, int ly, int ry,
+                 int vz, int lz, int rz);
 };

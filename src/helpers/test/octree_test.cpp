@@ -38,8 +38,8 @@ TEST(floatTest, BasicAssertions)
         for (auto j = 0; j < 2; ++j)
             for (auto k = 0; k < 2; ++k)
                 tree.update(i, j, k, 1);
-    EXPECT_EQ(tree.mmin(0, 1, 0, 1, 0, 1), 1);
-    // EXPECT_EQ(tree.mmin(0, 1, 0, 1, 0, 1), 8);
+    EXPECT_EQ(tree.query_min(0, 1, 0, 1, 0, 1), 1);
+    // EXPECT_EQ(tree.query_min(0, 1, 0, 1, 0, 1), 8);
 
     // for (auto i = 0; i < 2; ++i)
     //     for (auto j = 0; j < 2; ++j)

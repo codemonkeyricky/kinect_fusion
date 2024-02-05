@@ -17,7 +17,7 @@ cc_library(
         "VirtualSensor.h",
     ],
     deps = [
-        "//src/helpers:matrix"
+        "//src/helpers:matrix",
     ],
     visibility = ["//visibility:public"],
 )

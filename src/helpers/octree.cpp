@@ -2,10 +2,9 @@
 
 using namespace std;
 
-#if 0
-void build_z(int vx, int lx, int rx,
-             int vy, int ly, int ry,
-             int vz, int lz, int rz)
+void Octree::build_z(Vox *vol, int vx, int lx, int rx,
+                     int vy, int ly, int ry,
+                     int vz, int lz, int rz)
 {
     array<int, 3> x, y, z;
     x = {vx, lx, rx};
@@ -15,53 +14,52 @@ void build_z(int vx, int lx, int rx,
     if (lz == rz)
     {
         if (lx == rx && ly == ry)
-            tree[vx][vy][vz] = a[lx][ly][lz];
+            tree[vx][vy][vz] = vol[lx * m * m + ly * m + lz].v;
         else if (lx != rx)
-            tree[vx][vy][vz] = tree[vx * 2][vy][vz] + tree[vx * 2 + 1][vy][vz];
+            tree[vx][vy][vz] = min(tree[vx * 2][vy][vz], tree[vx * 2 + 1][vy][vz]);
         else if (ly != ry)
-            tree[vx][vy][vz] = tree[vx][vy * 2][vz] + tree[vx][vy * 2 + 1][vz];
+            tree[vx][vy][vz] = min(tree[vx][vy * 2][vz], tree[vx][vy * 2 + 1][vz]);
         else
-            tree[vx][vy][vz] = tree[vx * 2][vy * 2][vz] + tree[vx * 2 + 1][vy * 2 + 1][vz];
+            tree[vx][vy][vz] = min(tree[vx * 2][vy * 2][vz], tree[vx * 2 + 1][vy * 2 + 1][vz]);
     }
     else
     {
         int mz = (lz + rz) / 2;
-        build_z(vx, lx, rx,
+        build_z(vol, vx, lx, rx,
                 vy, ly, ry,
                 vz * 2, lz, mz);
-        build_z(vx, lx, rx,
+        build_z(vol, vx, lx, rx,
                 vy, ly, ry,
                 vz * 2 + 1, mz + 1, rz);
 
-        tree[vx][vy][vz] = tree[vx][vy][vz * 2] + tree[vx][vy][vz * 2 + 1];
+        tree[vx][vy][vz] = min(tree[vx][vy][vz * 2], tree[vx][vy][vz * 2 + 1]);
     }
 }
 
-void build_y(int vx, int lx, int rx,
-             int vy, int ly, int ry)
+void Octree::build_y(Vox *vol, int vx, int lx, int rx,
+                     int vy, int ly, int ry)
 {
     if (ly != ry)
     {
         int my = (ly + ry) / 2;
-        build_y(vx, lx, rx, vy * 2, ly, my);
-        build_y(vx, lx, rx, vy * 2 + 1, my + 1, ry);
+        build_y(vol, vx, lx, rx, vy * 2, ly, my);
+        build_y(vol, vx, lx, rx, vy * 2 + 1, my + 1, ry);
     }
-    build_z(vx, lx, rx,
+    build_z(vol, vx, lx, rx,
             vy, ly, ry,
             1, 0, m - 1);
 }
 
-void build_x(int vx, int lx, int rx)
+void Octree::build_x(Vox *vol, int vx, int lx, int rx)
 {
     if (lx != rx)
     {
         int mx = (lx + rx) / 2;
-        build_x(vx * 2, lx, mx);
-        build_x(vx * 2 + 1, mx + 1, rx);
+        build_x(vol, vx * 2, lx, mx);
+        build_x(vol, vx * 2 + 1, mx + 1, rx);
     }
-    build_y(vx, lx, rx, 1, 0, m - 1);
+    build_y(vol, vx, lx, rx, 1, 0, m - 1);
 }
-#endif
 
 float Octree::sum_z(int vx, int vy, int vz,
                   int tlz, int trz,
@@ -212,9 +210,10 @@ void Octree::update_x(int vx, int lx, int rx, int x, int y, int z, float new_val
              x, y, z, new_val);
 }
 
-Octree::Octree(int m) : m(m)
+void Octree::build(Vox *volume, int mm)
 {
-    tree = vvvf(4 * m, vvf(4 * m, vf(4 * m, 0)));
+    assert(m == mm);
+    build_x(volume, 1, 0, m - 1);
 }
 
 void Octree::update(int i, int j, int k, int val)
@@ -223,8 +222,13 @@ void Octree::update(int i, int j, int k, int val)
              i, j, k, val);
 }
 
-float Octree::mmin(int lx, int rx, int ly, int ry, int lz, int rz)
+float Octree::query_min(int lx, int rx, int ly, int ry, int lz, int rz)
 {
     return sum_x(1, 0, m - 1,
                  lx, rx, ly, ry, lz, rz);
+}
+
+Octree::Octree(int m) : m(m)
+{
+    tree = vvvf(4 * m, vvf(4 * m, vf(4 * m, 1)));
 }
