@@ -9,3 +9,6 @@ run:
 
 test:
 	bazel test -c dbg --cxxopt=-std=c++14 --test_output=all //src/helpers/test:octree_test
+
+perf: 
+	perf record -g ./bazel-bin/kinect_fusion
