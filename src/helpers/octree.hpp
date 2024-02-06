@@ -23,7 +23,7 @@ public:
     Octree(int m);
     // void build(Vox *vol, int m);
     void update(int i, int j, int k, bool val);
-    float query_min(int lx, int rx, int ly, int ry, int lz, int rz);
+    bool query_min(int lx, int rx, int ly, int ry, int lz, int rz);
 
 private:
     int m;
@@ -37,14 +37,14 @@ private:
                   int vy, int ly, int ry,
                   int vz, int lz, int rz,
                   int x, int y, int z, bool new_val);
-    float sum_x(int vx, int tlx, int trx,
+    bool sum_x(int vx, int tlx, int trx,
                 int lx, int rx,
                 int ly, int ry,
                 int lz, int rz);
-    float sum_y(int vx, int vy,
+    bool sum_y(int vx, int vy,
                 int tly, int try_, int ly, int ry,
                 int lz, int rz);
-    float sum_z(int vx, int vy, int vz,
+    bool sum_z(int vx, int vy, int vz,
                 int tlz, int trz,
                 int lz, int rz);
 

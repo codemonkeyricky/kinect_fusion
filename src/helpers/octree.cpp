@@ -63,7 +63,7 @@ void Octree::build_x(Vox *vol, int vx, int lx, int rx)
 }
 #endif
 
-float Octree::sum_z(int vx, int vy, int vz,
+bool Octree::sum_z(int vx, int vy, int vz,
                   int tlz, int trz,
                   int lz, int rz)
 {
@@ -76,14 +76,14 @@ float Octree::sum_z(int vx, int vy, int vz,
     int tmz = (tlz + trz) / 2;
 
     return min(sum_z(vx, vy, vz * 2,
-                     tlz, tmz,
+                     tlz, tmz, // t*
                      lz, min(rz, tmz)),
                sum_z(vx, vy, vz * 2 + 1,
-                     tmz + 1, rz,
+                     tmz + 1, trz, // t*
                      max(lz, tmz + 1), rz));
 }
 
-float Octree::sum_y(int vx, int vy,
+bool Octree::sum_y(int vx, int vy,
           int tly, int try_, int ly, int ry,
           int lz, int rz)
 {
@@ -106,7 +106,7 @@ float Octree::sum_y(int vx, int vy,
                      lz, rz));
 }
 
-float Octree::sum_x(int vx, int tlx, int trx,
+bool Octree::sum_x(int vx, int tlx, int trx,
                   int lx, int rx,
                   int ly, int ry,
                   int lz, int rz)
@@ -224,7 +224,7 @@ void Octree::update(int i, int j, int k, bool val)
              i, j, k, val);
 }
 
-float Octree::query_min(int lx, int rx, int ly, int ry, int lz, int rz)
+bool Octree::query_min(int lx, int rx, int ly, int ry, int lz, int rz)
 {
     return sum_x(1, 0, m - 1,
                  lx, rx, ly, ry, lz, rz);
