@@ -2,6 +2,7 @@
 
 using namespace std;
 
+#if 0
 void Octree::build_z(Vox *vol, int vx, int lx, int rx,
                      int vy, int ly, int ry,
                      int vz, int lz, int rz)
@@ -14,7 +15,7 @@ void Octree::build_z(Vox *vol, int vx, int lx, int rx,
     if (lz == rz)
     {
         if (lx == rx && ly == ry)
-            tree[vx][vy][vz] = vol[lx * m * m + ly * m + lz].v;
+            tree[vx][vy][vz] = (char)vol[lx * m * m + ly * m + lz].v;
         else if (lx != rx)
             tree[vx][vy][vz] = min(tree[vx * 2][vy][vz], tree[vx * 2 + 1][vy][vz]);
         else if (ly != ry)
@@ -60,6 +61,7 @@ void Octree::build_x(Vox *vol, int vx, int lx, int rx)
     }
     build_y(vol, vx, lx, rx, 1, 0, m - 1);
 }
+#endif
 
 float Octree::sum_z(int vx, int vy, int vz,
                   int tlz, int trz,
@@ -132,7 +134,7 @@ float Octree::sum_x(int vx, int tlx, int trx,
 void Octree::update_z(int vx, int lx, int rx,
                       int vy, int ly, int ry,
                       int vz, int lz, int rz,
-                      int x, int y, int z, float new_val)
+                      int x, int y, int z, bool new_val)
 {
     array<int, 3> xx, yy, zz;
     xx = {vx, lx, rx};
@@ -170,7 +172,7 @@ void Octree::update_z(int vx, int lx, int rx,
 
 void Octree::update_y(int vx, int lx, int rx,
                       int vy, int ly, int ry,
-                      int x, int y, int z, float new_val)
+                      int x, int y, int z, bool new_val)
 {
     if (ly != ry)
     {
@@ -190,7 +192,7 @@ void Octree::update_y(int vx, int lx, int rx,
              x, y, z, new_val);
 }
 
-void Octree::update_x(int vx, int lx, int rx, int x, int y, int z, float new_val)
+void Octree::update_x(int vx, int lx, int rx, int x, int y, int z, bool new_val)
 {
     if (lx != rx)
     {
@@ -210,13 +212,13 @@ void Octree::update_x(int vx, int lx, int rx, int x, int y, int z, float new_val
              x, y, z, new_val);
 }
 
-void Octree::build(Vox *volume, int mm)
-{
-    assert(m == mm);
-    build_x(volume, 1, 0, m - 1);
-}
+// void Octree::build(Vox *volume, int mm)
+// {
+//     assert(m == mm);
+//     build_x(volume, 1, 0, m - 1);
+// }
 
-void Octree::update(int i, int j, int k, int val)
+void Octree::update(int i, int j, int k, bool val)
 {
     update_x(1, 0, m - 1,
              i, j, k, val);

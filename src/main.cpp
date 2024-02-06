@@ -21,7 +21,7 @@
 #define ANGLE_THRESHOLD 1.05
 #define MAX_FRAME_NUM 800
 #define MIN_POINT -3.5f, -2.0f, -1.0f
-#define MAX_POINT 0.5f, 2.0f, 2.5f
+#define MAX_POINT 0.5f, 2.0f, 3.0f
 #define VOXEL_SIZE 0.025f
 // #define RESOLUTION 128, 128, 128
 // #define RESOLUTION 256, 256, 256

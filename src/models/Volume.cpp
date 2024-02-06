@@ -1,3 +1,6 @@
+
+#include <chrono> 
+
 #include "Volume.h"
 
 #define TRUNCATION 0.06f
@@ -18,7 +21,11 @@ Volume::Volume(Vector3f &min_, Vector3f &max_, float voxel_size, uint dim)
 	m_dim = dim;
 	vol = NULL;
 
+	assert(dx == dy);
+	assert(dy == dz);
+
 	vol = new Voxel[dx * dy * dz];
+	tree = new Octree(128);
 
 	zeroOutMemory();
 	compute_ddx_dddx();
@@ -216,6 +223,8 @@ void Volume::integrate(Frame frame)
 	int height = frame.getFrameHeight();
 
 	// std::cout << intrinsic << std::endl;
+					int cnt = 0, cnt2 = 0;
+
 
 	// subscripts: g - global coordinate system | c - camera coordinate system | i - image space
 	// short notations: V - vector | P - point | sdf - signed distance field value | tsdf - truncated sdf
@@ -271,7 +280,12 @@ void Volume::integrate(Frame frame)
 						auto updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
 						auto updated_weight = old_weight + current_weight;
 
+						if ((old_tsdf > 0. && updated_tsdf <= 0.) ||
+							(old_tsdf <= 0. && updated_tsdf > 0.))
+							tree->update(i, j, k, updated_tsdf <= 0 ? 0 : 1), ++cnt2;
+
 						vol[getPosFromTuple(i, j, k)].setTSDF(updated_tsdf);
+
 						vol[getPosFromTuple(i, j, k)].setWeight(updated_weight);
 
 						if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
@@ -282,11 +296,19 @@ void Volume::integrate(Frame frame)
 										  (const unsigned char)((color[2] * old_weight + colorMap[4 * index + 2] * current_weight) / (old_weight + current_weight)),
 										  (const unsigned char)((color[3] * old_weight + colorMap[4 * index + 3] * current_weight) / (old_weight + current_weight))});
 						}
+						++cnt;
 					}
 				}
 			}
 		}
 	}
+
+	// auto start = std::chrono::high_resolution_clock::now();
+	// tree->build((Octree::Vox *)vol, 128);
+	// auto stop = std::chrono::high_resolution_clock::now();
+	// auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+	// std::cout << "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
+	// assert(0);
 
 	// std::cout << "Integrate done!" << std::endl;
 }

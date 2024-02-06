@@ -4,10 +4,12 @@
 #define VOLUME_H
 
 #include <limits>
-#include "Eigen.h"
-#include "Frame.h"
 #include <unordered_map>
 #include <vector>
+
+#include "Eigen.h"
+#include "Frame.h"
+#include "src/helpers/octree.hpp"
 
 typedef unsigned int uint;
 
@@ -23,29 +25,35 @@ private:
 public:
 	Voxel() {}
 
-	Voxel(float value_, float weight_, Vector4uc color_) : value{ value_ }, weight{ weight_ }, color{ color_ } {}
+	Voxel(float value_, float weight_, Vector4uc color_) : value{value_}, weight{weight_}, color{color_} {}
 
-	inline float getTSDF() const {
+	float getTSDF() const
+	{
 		return value;
 	}
 
-	float getWeight() {
+	float getWeight()
+	{
 		return weight;
 	}
 
-	Vector4uc getColor() {
+	Vector4uc getColor()
+	{
 		return color;
 	}
 
-	void setTSDF(float v) {
+	void setTSDF(float v)
+	{
 		value = v;
 	}
 
-	void setWeight(float w) {
+	void setWeight(float w)
+	{
 		weight = w;
 	}
 
-	void setColor(Vector4uc c) {
+	void setColor(Vector4uc c)
+	{
 		color = c;
 	}
 };
@@ -87,6 +95,8 @@ private:
 	Voxel* vol;
 
 	uint m_dim;
+
+	Octree *tree;
 
 	//map that tracks raycasted voxels
 	std::unordered_map<Vector3i, bool, matrix_hash<Vector3i>> visitedVoxels;
