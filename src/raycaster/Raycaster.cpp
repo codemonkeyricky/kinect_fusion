@@ -269,3 +269,45 @@ Frame &RayCaster::raycast()
 
 	return frame;
 }
+
+// Vector3f ray_start = rays[i][0];
+// Vector3f ray_dir = rays[i][1];
+// Ray ray = Ray(ray_start, ray_dir);
+// ray_curr = ray_start;
+
+// int len = 32;
+// while (true)
+// {
+//     // find a size that fits within bound
+//     Vector3f mmin, mmax;
+//     while (true)
+//     {
+//         auto mmin = Vector3f{ray_curr[0] - len, ray_curr[1] - len, ray_curr[2] - len};
+//         auto mmax = Vector3f{ray_curr[0] + len, ray_curr[1] + len, ray_curr[2] + len};
+//         if (len && (!vol.isInterpolationPossible(mmin) || !vol.isInterpolationPossible(mmax)))
+//             len /= 2;
+//         else
+//             break;
+//     }
+
+//     // find a size that fits within bound
+//     while (len && vol.tree->query_min(ray_curr[0] - len, ray_curr[0] + len,
+//                                       ray_curr[1] - len, ray_curr[1] + len,
+//                                       ray_curr[2] - len, ray_curr[2] + len) == 0)
+//         len /= 2;
+
+//     if (len == 0)
+//     {
+//         break;
+//         Vector3i ray_prev_int = Vector3i{ray_prev(0), ray_prev(1), ray_prev(2)};
+//         Vector3i ray_curr_int = Vector3i{ray_curr(0), ray_curr(1), ray_curr(2)};
+//         if (vol.get(ray_prev_int).getTSDF() > 0 && vol.get(ray_curr_int).getTSDF() < 0)
+//             break;
+//     }
+
+//     auto r = ray.next(std::max(1, len));
+//     ray.setCurrPos(r);
+
+//     ray_prev = ray_curr;
+//     ray_curr = r;
+// }
