@@ -22,7 +22,7 @@
 #define MAX_FRAME_NUM 800
 #define MIN_POINT -2.7f, -2.2f, -1.0f
 #define MAX_POINT 0.5f, 1.0f, 2.2f
-#define VOXEL_SIZE 0.025f
+#define VOXEL_SIZE 0.0125f
 // #define RESOLUTION 128, 128, 128
 // #define RESOLUTION 256, 256, 256
 // #define RESOLUTION 512, 512, 512
