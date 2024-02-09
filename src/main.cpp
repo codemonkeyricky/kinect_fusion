@@ -6,8 +6,8 @@
 #include <chrono>
 
 #include "ICP.h"
-#include "Raycaster.h"
-#include "Ray.h"
+#include "raycaster.h"
+#include "ray.h"
 #include "Frame.h"
 #include "Volume.h"
 #include "VirtualSensor.h"

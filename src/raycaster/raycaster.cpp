@@ -1,6 +1,6 @@
 #include <chrono>
 
-#include "Raycaster.h"
+#include "raycaster.h"
 
 //RayCaster::RayCaster() {}
 
