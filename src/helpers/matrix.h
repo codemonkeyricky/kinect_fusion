@@ -32,12 +32,34 @@ struct alignas(16) vector4f
         return rv; 
     }
 
+    inline vector4f operator/(const float &op) const
+    {
+        vector4f rv = {};
+        for (auto i = 0; i < 4; ++i)
+            rv[i] = data[i] / op;
+        return rv; 
+    }
+
     inline vector4f operator +(const vector4f &op) const
     {
         vector4f rv = {};
         for (auto i = 0; i < 4; ++i)
             rv[i] = data[i] + op[i];
         return rv; 
+    }
+
+    inline vector4f operator+=(const vector4f &op)
+    {
+        for (auto i = 0; i < 4; ++i)
+            this->data[i] += op[i];
+        return *this;
+    }
+
+    inline vector4f operator/=(const float &op)
+    {
+        for (auto i = 0; i < 4; ++i)
+            this->data[i] /= op;
+        return *this;
     }
 
     inline vector4f operator-(const vector4f &op) const
