@@ -18,9 +18,11 @@ void RayCaster::changeVolume(Volume& vol_) {
 
 // a function that writes down the invalid results
 void mistake(
-	std::vector<Vector3f> &ovg, std::vector<Vector3f> &ong)
+	std::vector<vector4f> &ovg, std::vector<Vector3f> &ong)
 {
-	ovg.emplace_back(Vector3f(MINF, MINF, MINF));
+	vector4f error;
+	error[0] = error[1] = error[2] = MINF;
+	ovg.emplace_back(error);
 	ong.emplace_back(Vector3f(MINF, MINF, MINF));
 }
 
@@ -38,9 +40,8 @@ Frame &RayCaster::raycast()
 	int height = frame.getFrameHeight();
 
 	Vector3f ray_start, ray_dir, ray_current, ray_previous, ray_next;
-	Vector3i ray_current_int, ray_previous_int;
 
-	std::shared_ptr<std::vector<Vector3f>> output_vertices_global = std::make_shared<std::vector<Vector3f>>(std::vector<Vector3f>());
+	std::shared_ptr<std::vector<vector4f>> output_vertices_global = std::make_shared<std::vector<vector4f>>(std::vector<vector4f>());
 	output_vertices_global->reserve(width * height);
 
 	std::shared_ptr<std::vector<Vector3f>> output_normals_global = std::make_shared<std::vector<Vector3f>>(std::vector<Vector3f>());
@@ -57,7 +58,7 @@ Frame &RayCaster::raycast()
 
 	auto t0 = std::chrono::high_resolution_clock::now();
 
-	std::vector<std::array<Vector3f, 2>> rays(640 * 480);
+	std::vector<std::array<vector4f, 2>> rays(640 * 480);
 
 	for (int i = 0; i < height; i++)
 	{
@@ -96,7 +97,8 @@ Frame &RayCaster::raycast()
 				continue;
 			}
 
-			rays[i * 640 + j] = {ray_start, ray_dir};
+			rays[i * 640 + j][0] = {ray_start(0), ray_start(1), ray_start(2), 0};
+			rays[i * 640 + j][1] = {ray_dir(0), ray_dir(1), ray_dir(2), 0};
 		}
 	}
 
@@ -104,14 +106,12 @@ Frame &RayCaster::raycast()
 
 	for (auto i = 0; i < rays.size(); ++i)
 	{
+			vector4f ray_current, ray_previous, p, v, n;
 		{
-			Vector3f ray_start = rays[i][0];
-			Vector3f ray_dir = rays[i][1];
-
-			Ray ray = Ray(ray_start, ray_dir);
+			vector4f ray_start = rays[i][0];
+			vector4f ray_dir = rays[i][1];
 
 			ray_current = ray_start;
-			ray_current_int = Volume::intCoords(ray_current);
 
 			if (!vol.isPointInVolume(ray_current))
 			{
@@ -122,16 +122,8 @@ Frame &RayCaster::raycast()
 			while (true)
 			{
 				ray_previous = ray_current;
-				ray_previous_int = ray_current_int;
 
-				do
-				{
-					// std::cout << ray_current << std::endl;
-
-					ray_current = ray.next();
-					ray_current_int = Volume::intCoords(ray_current);
-
-				} while (ray_previous_int == ray_current_int);
+				ray_current += ray_dir;
 
 				if (!vol.isInterpolationPossible(ray_previous) || !vol.isInterpolationPossible(ray_current))
 				{
@@ -139,7 +131,7 @@ Frame &RayCaster::raycast()
 					break;
 				}
 
-				else if (vol.get(ray_previous_int).getTSDF() == 0)
+				else if (vol.get(ray_previous).getTSDF() == 0)
 				{
 					v = vol.gridToWorld(ray_previous);
 					// n = vol.calculateNormal(ray_previous);
@@ -156,13 +148,13 @@ Frame &RayCaster::raycast()
 					if (!vol.voxelVisited(ray_previous))
 					{
 						// vol.updateColor(ray_previous_int, color, true);
-						vol.setVisited(ray_previous_int);
+						vol.setVisited(ray_previous);
 					}
 
 					break;
 				}
 
-				else if (vol.get(ray_current_int).getTSDF() == 0)
+				else if (vol.get(ray_current).getTSDF() == 0)
 				{
 					v = vol.gridToWorld(ray_current);
 					// n = vol.calculateNormal(ray_current);
@@ -178,14 +170,14 @@ Frame &RayCaster::raycast()
 					if (!vol.voxelVisited(ray_current))
 					{
 						// vol.updateColor(ray_previous_int, color, true);
-						vol.setVisited(ray_current_int);
+						vol.setVisited(ray_current);
 					}
 
 					break;
 				}
-				else if (vol.get(ray_previous_int).getTSDF() < 0 && vol.get(ray_current_int).getTSDF() > 0)
+				else if (vol.get(ray_previous).getTSDF() < 0 && vol.get(ray_current).getTSDF() > 0)
 					break;
-				else if (vol.get(ray_previous_int).getTSDF() > 0 && vol.get(ray_current_int).getTSDF() < 0)
+				else if (vol.get(ray_previous).getTSDF() > 0 && vol.get(ray_current).getTSDF() < 0)
 				{
 					sdf_1 = vol.trilinearInterpolation(ray_previous);
 					sdf_2 = vol.trilinearInterpolation(ray_current);
@@ -218,11 +210,11 @@ Frame &RayCaster::raycast()
 
 					if (!vol.voxelVisited(ray_previous))
 					{
-						vol.setVisited(ray_previous_int);
+						vol.setVisited(ray_previous);
 					}
 
 					if (!vol.voxelVisited(ray_current))
-						vol.setVisited(ray_current_int);
+						vol.setVisited(ray_current);
 
 					// std::cout << p << std::endl;
 					// if(!vol.voxelVisited(p))
@@ -249,17 +241,23 @@ Frame &RayCaster::raycast()
 
 	// TODO: update _vector4f variants too
 
-	frame.mVerticesGlobal = output_vertices_global;
+	// frame.mVerticesGlobal = output_vertices_global;
+	// for (auto k = 0; k < 640 * 480; ++k)
+	// 	for (auto i = 0; i < 3; ++i)
+	// 		(*frame.mVerticesGlobal_vector4f)[k][i] = (*frame.mVerticesGlobal)[k](i);
 
+	frame.mVerticesGlobal_vector4f = output_vertices_global;
+
+	frame.mVerticesGlobal->resize(640 * 480);
 	for (auto k = 0; k < 640 * 480; ++k)
 		for (auto i = 0; i < 3; ++i)
-			(*frame.mVerticesGlobal_vector4f)[k][i] = (*frame.mVerticesGlobal)[k](i);
+			(*frame.mVerticesGlobal)[k](i) = (*frame.mVerticesGlobal_vector4f)[k][i];
 
 	// std::shared_ptr<std::vector<vector4f>> mVerticesGlobal_vector4f;
 	// std::shared_ptr<std::vector<vector4f>> mNormalGlobal_vector4f;
 
 	// frame.mNormalsGlobal = output_normals_global;
-	frame.mVertices = std::make_shared<std::vector<Vector3f>>(frame.transformPoints(*output_vertices_global, worldToCamera));
+	frame.mVertices = std::make_shared<std::vector<Vector3f>>(frame.transformPoints(*frame.mVerticesGlobal, worldToCamera));
 	frame.computeNormalMap(width, height);
 	frame.mNormalsGlobal = std::make_shared<std::vector<Vector3f>>(frame.rotatePoints(frame.getNormalMap(), rotationMatrix));
 

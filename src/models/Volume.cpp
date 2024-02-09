@@ -106,7 +106,8 @@ void Volume::updateColor(Vector3f point, Vector4uc& color, bool notVisited) {
 }
 
 // estimate the normal for a point in voxel grid coordinates using voxel grid by calculating the numerical derivative of TSDF
-Vector3f Volume::calculateNormal(const Vector3f& point) {
+Vector3f Volume::calculateNormal(const Vector3f &point)
+{
 	//Vector3f shiftedXup, shiftedXdown, shiftedYup, shiftedYdown, shiftedZup, shiftedZdown;
 	Vector3f shiftedXup, shiftedYup, shiftedZup;
 	float x_dir, y_dir, z_dir;
@@ -156,9 +157,18 @@ Vector3f Volume::calculateNormal(const Vector3f& point) {
 	return normal;
 }
 
+float Volume::trilinearInterpolation(const Vector3f &p) const
+{
+	vector4f tmp;
+	for (auto i = 0; i < 3; ++i)
+		tmp[i] = p(i);
+	trilinearInterpolation(tmp);
+}
+
 // trilinear interpolation of a point in voxel grid coordinates to get SDF at the point
-float Volume::trilinearInterpolation(const Vector3f& p) const {
-	Vector3i start = intCoords(p);
+float Volume::trilinearInterpolation(const vector4f &p) const
+{
+	Vector3i start = {(int)p[0], (int)p[1], (int)p[2]};
 	float c000, c001, c010, c011, c100, c101, c110, c111;
 
 	c000 = get(start[0] + 0, start[1] + 0, start[2] + 0).getTSDF();
