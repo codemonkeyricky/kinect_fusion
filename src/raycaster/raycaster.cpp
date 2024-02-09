@@ -131,62 +131,10 @@ Frame &RayCaster::raycast()
 					break;
 				}
 
-				else if (vol.get(ray_previous).getTSDF() == 0)
-				{
-					v = vol.gridToWorld(ray_previous);
-					// n = vol.calculateNormal(ray_previous);
-
-					/*
-					if (n == Vector3f{ MINF, MINF, MINF }) {
-						mistake(*output_vertices_global, *output_normals_global);
-						break;
-					}
-					*/
-					output_vertices_global->emplace_back(v);
-					// output_normals_global->emplace_back(n);
-
-					if (!vol.voxelVisited(ray_previous))
-					{
-						// vol.updateColor(ray_previous_int, color, true);
-						vol.setVisited(ray_previous);
-					}
-
-					break;
-				}
-
-				else if (vol.get(ray_current).getTSDF() == 0)
-				{
-					v = vol.gridToWorld(ray_current);
-					// n = vol.calculateNormal(ray_current);
-					/*
-					if (n == Vector3f{ MINF, MINF, MINF }) {
-						mistake(*output_vertices_global, *output_normals_global);
-						break;
-					}
-					*/
-					output_vertices_global->emplace_back(v);
-					// output_normals_global->emplace_back(n);
-
-					if (!vol.voxelVisited(ray_current))
-					{
-						// vol.updateColor(ray_previous_int, color, true);
-						vol.setVisited(ray_current);
-					}
-
-					break;
-				}
-				else if (vol.get(ray_previous).getTSDF() < 0 && vol.get(ray_current).getTSDF() > 0)
-					break;
-				else if (vol.get(ray_previous).getTSDF() > 0 && vol.get(ray_current).getTSDF() < 0)
+				if (vol.get(ray_current).getTSDF() < 0)
 				{
 					sdf_1 = vol.trilinearInterpolation(ray_previous);
 					sdf_2 = vol.trilinearInterpolation(ray_current);
-
-					if (sdf_1 == std::numeric_limits<float>::max() || sdf_2 == std::numeric_limits<float>::max() || sdf_2 == sdf_1)
-					{
-						mistake(*output_vertices_global, *output_normals_global);
-						break;
-					}
 
 					p = ray_previous - (ray_dir * sdf_1) / (sdf_2 - sdf_1);
 
@@ -223,6 +171,27 @@ Frame &RayCaster::raycast()
 					//	vol.updateColor(p, color, false);
 
 					++cnt;
+
+					break;
+				}
+				else if (vol.get(ray_current).getTSDF() == 0)
+				{
+					v = vol.gridToWorld(ray_current);
+					// n = vol.calculateNormal(ray_current);
+					/*
+					if (n == Vector3f{ MINF, MINF, MINF }) {
+						mistake(*output_vertices_global, *output_normals_global);
+						break;
+					}
+					*/
+					output_vertices_global->emplace_back(v);
+					// output_normals_global->emplace_back(n);
+
+					if (!vol.voxelVisited(ray_current))
+					{
+						// vol.updateColor(ray_previous_int, color, true);
+						vol.setVisited(ray_current);
+					}
 
 					break;
 				}
