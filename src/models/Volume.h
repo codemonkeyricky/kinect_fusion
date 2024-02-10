@@ -27,12 +27,12 @@ public:
 
 	Voxel(float value_, float weight_, Vector4uc color_) : value{value_}, weight{weight_}, color{color_} {}
 
-	float getTSDF() const
+	inline float getTSDF() const
 	{
 		return value;
 	}
 
-	float getWeight()
+	inline float getWeight()
 	{
 		return weight;
 	}
