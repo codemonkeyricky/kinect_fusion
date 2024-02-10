@@ -246,11 +246,11 @@ void Volume::integrate(Frame frame)
 
 	// std::cout << "Integrate starting..." << std::endl;
 
-	for (int k = 0; k < dz; k++)
+	for (int i = 0; i < dx; i++)
 	{
 		for (int j = 0; j < dy; j++)
 		{
-			for (int i = 0; i < dx; i++)
+			for (int k = 0; k < dz; k++)
 			{
 				// project the grid point into image space
 				Pg = gridToWorld(i, j, k);
