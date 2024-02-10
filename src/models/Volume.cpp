@@ -219,6 +219,57 @@ float Volume::trilinearInterpolation(const vector4f &p) const
 	return c;
 }
 
+static matrix4f getRotation(
+	const Eigen::Matrix4f &mat)
+{
+    matrix4f r;
+    for (auto i = 0; i < 3; ++i)
+        for (auto j = 0; j < 3; ++j)
+            r[i][j] = mat(i, j);
+    return r;
+}
+
+static vector4f getTranslation(
+    const Eigen::Matrix4f &mat)
+{
+    vector4f t;
+    t[0] = mat(0, 3);
+    t[1] = mat(1, 3);
+    t[2] = mat(2, 3);
+    t[3] = 0;
+    return t;
+}
+
+inline matrix4f convertToArray(
+    const Eigen::Matrix3f &m)
+{
+    matrix4f rv = {};
+    for (auto i = 0; i < 3; ++i)
+        for (auto j = 0; j < 3; ++j)
+            rv[i][j] = m.data()[j * 3 + i];
+    return rv;
+}
+
+inline vector4f convertToArray(
+	const Eigen::Vector3f &v)
+{
+    vector4f rv;
+    rv[0] = v[0];
+    rv[1] = v[1];
+    rv[2] = v[2];
+    rv[3] = 0;
+    return rv;
+}
+
+inline vector4i round(const vector4f &v)
+{
+    auto vv = _mm_load_ps((const float*)&v);
+    auto rrv = _mm_cvtps_epi32(vv);
+    vector4i rv;
+    _mm_store_si128( (__m128i*)&rv[0], rrv);
+    return rv;
+}
+
 // using given frame calculate TSDF values for all voxels in the grid
 // __attribute__((optimize("O0")))
 void Volume::integrate(Frame frame)
@@ -226,7 +277,7 @@ void Volume::integrate(Frame frame)
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
 	const Matrix4f cameraToWorld = worldToCamera.inverse();
 	const Matrix3f intrinsic = frame.getIntrinsicMatrix();
-	Vector3f translation = cameraToWorld.block(0, 3, 3, 1);
+	auto translation = getTranslation(cameraToWorld); 
 	const float *depthMap = frame.getDepthMap();
 	const BYTE *colorMap = frame.getColorMap();
 	int width = frame.getFrameWidth();
@@ -246,16 +297,24 @@ void Volume::integrate(Frame frame)
 
 	// std::cout << "Integrate starting..." << std::endl;
 
+	auto ex_rotation = getRotation(frame.getExtrinsicMatrix());
+	auto ex_translation = getTranslation(frame.getExtrinsicMatrix());
+	auto in = convertToArray(frame.getIntrinsicMatrix());
+
 	for (int i = 0; i < dx; i++)
 	{
 		for (int j = 0; j < dy; j++)
 		{
 			for (int k = 0; k < dz; k++)
 			{
+				vector4f p = {i, j, k, 0};
+
 				// project the grid point into image space
-				Pg = gridToWorld(i, j, k);
-				Pc = frame.projectPointIntoFrame(Pg);
-				Pi = frame.projectOntoImgPlane(Pc);
+				auto pg = gridToWorld(p);
+				auto pc = ex_rotation * pg + ex_translation;
+				auto pi = in * pc;
+				for (int i = 0; i < 4; ++i)
+					pi[i] /= pi[2];
 
 				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
 
@@ -264,16 +323,20 @@ void Volume::integrate(Frame frame)
 				// Pi = Frame::perspectiveProjection(Pc, intrinsic);
 
 				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
+				auto pii = round(pi);
+				// auto pii = pi;
+				auto x = pi[0] = pii[0];
+				auto y = pi[1] = pii[1];
 
-				if (frame.containsImgPoint(Pi))
+				if (x >= 0 && x < 640 && y >= 0 && y < 480)
 				{
 					// get the depth of the point
-					index = Pi[1] * width + Pi[0];
+					index = pi[1] * width + pi[0];
 					depth = depthMap[index];
 
 					// calculate the sdf value
-					lambda = (Pc / Pc[2]).norm();
-					sdf = depth - ((Pg - translation) / lambda).norm();
+					lambda = (pc / pc[2]).norm();
+					sdf = depth - ((pg - translation) / lambda).norm();
 
 					// get the previous value and weight
 					tsdf = vol[getPosFromTuple(i, j, k)].getTSDF();
@@ -290,12 +353,7 @@ void Volume::integrate(Frame frame)
 						auto updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
 						auto updated_weight = old_weight + current_weight;
 
-						if ((old_tsdf > 0. && updated_tsdf <= 0.) ||
-							(old_tsdf <= 0. && updated_tsdf > 0.))
-							tree->update(i, j, k, updated_tsdf <= 0 ? 0 : 1), ++cnt2;
-
 						vol[getPosFromTuple(i, j, k)].setTSDF(updated_tsdf);
-
 						vol[getPosFromTuple(i, j, k)].setWeight(updated_weight);
 
 						if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
