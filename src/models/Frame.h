@@ -8,9 +8,9 @@
 #include <vector>
 #include <memory>
 
-#include "Eigen.h"
-#include "VirtualSensor.h"
-#include "matrix.h"
+#include "src/helpers/Eigen.h"
+#include "src/helpers/VirtualSensor.h"
+#include "src/helpers/matrix.h"
 
 class Frame {
     friend class RayCaster;

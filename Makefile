@@ -1,5 +1,5 @@
 all:
-	bazel build -c dbg --copt=-std=gnu++17 --copt=-O3 //:kinect_fusion
+	bazel build -c dbg --copt=-std=gnu++17 --copt=-O3 //:kinect_fusion --sandbox_debug
 
 dbg:
 	gdb -tui ./bazel-bin/kinect_fusion

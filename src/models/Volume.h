@@ -7,9 +7,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Eigen.h"
-#include "Frame.h"
-#include "src/helpers/octree.hpp"
+#include "src/helpers/Eigen.h"
+#include "src/models/Frame.h"
+// #include "src/helpers/octree.hpp"
 
 typedef unsigned int uint;
 
@@ -96,8 +96,6 @@ private:
 
 	uint m_dim;
 
-	Octree *tree;
-
 	//map that tracks raycasted voxels
 	std::unordered_map<Vector3i, bool, matrix_hash<Vector3i>> visitedVoxels;
 
@@ -118,8 +116,9 @@ public:
 		return coord;
 	}
 
-	inline static Vector3f roundCoords(const Vector3f& p) {
-		Vector3f coord{ 0.0f, 0.0f, 0.0f };
+	inline static Vector3f roundCoords(const Vector3f &p)
+	{
+		Vector3f coord{0.0f, 0.0f, 0.0f};
 
 		coord[0] = round(p[0]);
 		coord[1] = round(p[1]);
@@ -127,7 +126,6 @@ public:
 
 		return coord;
 	}
-
 
 	// estimate the normal for a point in voxel grid coordinates using voxel grid by calculating the numerical derivative of TSDF
 	Vector3f calculateNormal(const Vector3f& point);
@@ -161,7 +159,7 @@ public:
 	};
 
 	//! Get the value at (x_, y_, z_).
-	inline Voxel& get(uint x_, uint y_, uint z_) const
+	inline Voxel &get(uint x_, uint y_, uint z_) const
 	{
 		return vol[getPosFromTuple(x_, y_, z_)];
 	};

@@ -20,9 +20,9 @@
 #define EDGE_THRESHOLD 0.02
 #define ANGLE_THRESHOLD 1.05
 #define MAX_FRAME_NUM 800
-#define MIN_POINT -2.0f, -2.0f, -1.0f
-#define MAX_POINT 1.2f, 1.2f, 2.2f
-#define VOXEL_SIZE 0.0125f
+#define MIN_POINT -2.0f, -2.0f, -2.0f
+#define MAX_POINT 2.0f, 2.0f, 2.0f
+#define VOXEL_SIZE 0.0250f
 // #define RESOLUTION 128, 128, 128
 // #define RESOLUTION 256, 256, 256
 // #define RESOLUTION 512, 512, 512
@@ -94,7 +94,7 @@ int main()
         BYTE *colorMap = sensor.GetColorRGBX();
         Matrix3f depthIntrinsics = sensor.GetDepthIntrinsics();
         Matrix4f depthExtrinsics = sensor.GetDepthExtrinsics();
-        Matrix4f trajectory = sensor.GetTrajectory();
+        // Matrix4f trajectory = sensor.GetTrajectory();
         Matrix4f trajectoryInv = sensor.GetTrajectory().inverse();
         int depthHeight = sensor.GetDepthImageHeight();
         int depthWidth = sensor.GetDepthImageWidth();

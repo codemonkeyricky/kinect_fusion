@@ -25,7 +25,6 @@ Volume::Volume(Vector3f &min_, Vector3f &max_, float voxel_size, uint dim)
 	assert(dy == dz);
 
 	vol = new Voxel[dx * dy * dz];
-	tree = new Octree(128);
 
 	zeroOutMemory();
 	compute_ddx_dddx();
@@ -92,7 +91,8 @@ void Volume::updateColor(Vector3i voxelCoords, Vector4uc& color, bool notVisited
 }
 
 //! Updates the color of a voxel for a point p in grid coordinates
-void Volume::updateColor(Vector3f point, Vector4uc& color, bool notVisited) {
+void Volume::updateColor(Vector3f point, Vector4uc &color, bool notVisited)
+{
 	Vector3i p_int = Volume::intCoords(point);
 
 	updateColor(Vector3i{ p_int[0] + 0, p_int[1] + 0, p_int[2] + 0 }, color, notVisited);
@@ -139,12 +139,10 @@ Vector3f Volume::calculateNormal(const Vector3f &point)
 
 	float sdfPoint = trilinearInterpolation(point);
 
-	if (
-		sdfXup == std::numeric_limits<float>::max() ||
+	if (sdfXup == std::numeric_limits<float>::max() ||
 		sdfYup == std::numeric_limits<float>::max() ||
 		sdfZup == std::numeric_limits<float>::max() ||
-		sdfPoint == std::numeric_limits<float>::max()
-		)
+		sdfPoint == std::numeric_limits<float>::max())
 		return Vector3f(MINF, MINF, MINF);
 
 	x_dir = (sdfXup - sdfPoint) / (dddx);
@@ -179,20 +177,6 @@ float Volume::trilinearInterpolation(const vector4f &p) const
 	c110 = get(start[0] + 1, start[1] + 1, start[2] + 0).getTSDF();
 	c011 = get(start[0] + 0, start[1] + 1, start[2] + 1).getTSDF();
 	c111 = get(start[0] + 1, start[1] + 1, start[2] + 1).getTSDF();
-
-#if 0
-	if (
-		c000 == std::numeric_limits<float>::max() || 
-		c001 == std::numeric_limits<float>::max() || 
-		c010 == std::numeric_limits<float>::max() || 
-		c011 == std::numeric_limits<float>::max() ||
-		c100 == std::numeric_limits<float>::max() ||
-		c101 == std::numeric_limits<float>::max() ||
-		c110 == std::numeric_limits<float>::max() ||
-		c111 == std::numeric_limits<float>::max()
-	)
-		return std::numeric_limits<float>::max();
-#endif
 
 	float xd, yd, zd;
 
