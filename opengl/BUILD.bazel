@@ -1,16 +1,16 @@
 
-cc_binary(
-    name = "opengl", 
-    includes = [
-    ],
-    srcs = [
-        "main.cpp",
-        ],
-    deps = [
-    ],
-    linkopts = [ 
-        "-lSDL2",
-        "-lGL",
-        "-lGLU",
-        ],
-)
+#cc_binary(
+#    name = "opengl", 
+#    includes = [
+#    ],
+#    srcs = [
+#        "main.cpp",
+#        ],
+#    deps = [
+#    ],
+#    linkopts = [ 
+#        "-lSDL2",
+#        "-lGL",
+#        "-lGLU",
+#        ],
+#)

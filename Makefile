@@ -1,5 +1,5 @@
 all:
-	bazel build -c dbg --copt=-std=gnu++17 --copt=-O3 //:kinect_fusion --sandbox_debug
+	bazel build -c dbg --cxxopt=-std=gnu++17 --copt=-O3 //... 
 
 dbg:
 	gdb -tui ./bazel-bin/kinect_fusion
@@ -8,7 +8,7 @@ run:
 	./bazel-bin/kinect_fusion
 
 test:
-	bazel test -c dbg --cxxopt=-std=c++14 --test_output=all //src/helpers/test:octree_test
+	bazel test -c dbg --cxxopt=-std=gnu++17 --copt=-O3 //...
 
 perf: 
 	perf record -g ./bazel-bin/kinect_fusion
