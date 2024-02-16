@@ -1,8 +1,10 @@
 
 cc_library(
     name = "matrix",
-    srcs = [
+    hdrs = [
         "matrix.h",
+    ],
+    srcs = [
         "matrix.cpp",
     ],
     visibility = ["//visibility:public"],
@@ -11,10 +13,12 @@ cc_library(
 cc_library(
     name = "helpers",
     srcs = [
-        "Eigen.h",
         "FreeImageHelper.cpp",
         "FreeImageHelper.h",
         "VirtualSensor.h",
+    ],
+    hdrs = [
+        "Eigen.h",
     ],
     deps = [
         "//src/helpers:matrix",
