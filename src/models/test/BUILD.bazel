@@ -1,0 +1,10 @@
+
+cc_test(
+  name = "volume_test",
+  size = "small",
+  srcs = ["volume_test.cpp"],
+  deps = [
+    "@com_google_googletest//:gtest_main",
+    "//src/helpers:octree",
+    ],
+)

@@ -1,0 +1,39 @@
+
+cc_library(
+    name = "volume",
+    visibility = ["//visibility:public"],
+    hdrs = [ 
+        "Volume.h",
+    ],
+    srcs = [
+        "Volume.cpp",
+    ],
+    deps = [
+        "@eigen",
+        "//src/helpers:helpers",
+        "//src/models:models",
+    ],
+    # includes = [
+    #     "libgens/eigen", 
+    # ],
+)
+
+cc_library(
+    name = "models",
+    visibility = ["//visibility:public"],
+    hdrs = [ 
+        "Frame.h", 
+    ],
+    srcs = [
+        "Frame.cpp", 
+        "SimpleMesh.h", 
+        "MarchingCubes.h", 
+    ],
+    deps = [
+        "@eigen",
+        "//src/helpers:helpers",
+    ],
+    # includes = [
+    #     "libgens/eigen", 
+    # ],
+)
