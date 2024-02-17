@@ -3,6 +3,8 @@
 #include <array>
 #include <cmath>
 
+#include <immintrin.h>
+
 struct alignas(16) vector4i 
 {
     std::array<int, 4> data = {};
