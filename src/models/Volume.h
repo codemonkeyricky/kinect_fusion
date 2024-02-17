@@ -100,9 +100,11 @@ private:
 	//map that tracks raycasted voxels
 	std::unordered_map<Vector3i, bool, matrix_hash<Vector3i>> visitedVoxels;
 
-	Voxel *pg_dir[20][20][20] = {};
-	int pg_len;
-	vector4i pg_off;
+#if DYNAMIC_CHUNK
+	int chunk_len_in_voxels;
+	Voxel *chunk_dir[20][20][20] = {};	///< Each chunk has chunk_len_in_voxels^3 voxels
+	vector4i voxel_offset;
+#endif
 
 public:
 	Volume();
@@ -177,10 +179,28 @@ public:
 		return(get(pos_[0], pos_[1], pos_[2]));
 	}
 
+#if DYNAMIC_CHUNK
+	inline Voxel &get(const vector4f &va) const
+	{
+		vector4i pa;
+		for (auto i = 0; i < 4; ++i)
+			pa[i] = va[i] + voxel_offset[i];
+	
+		vector4i frame; 
+		for (auto i = 0; i < 4; ++i)
+			frame[i] = pa[i] / chunk_len_in_voxels;
+
+		return chunk_dir[frame[0]]
+						[frame[1]]
+						[frame[2]]
+						[pa[0] * chunk_len_in_voxels * chunk_len_in_voxels + pa[1] * chunk_len_in_voxels + pa[2]];
+	}
+#else
 	inline Voxel &get(const vector4f &pos_) const
 	{
 		return (get((int)pos_[0], (int)pos_[1], (int)pos_[2]));
 	}
+#endif // DYNAMIC_CHUNK
 
 	//! Returns the cartesian coordinates of node (i,j,k).
 	inline Vector3f gridToWorld(int i, int j, int k) const
