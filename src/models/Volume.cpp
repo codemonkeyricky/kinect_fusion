@@ -31,20 +31,22 @@ Volume::Volume(Vector3f &min_, Vector3f &max_, float voxel_size, uint dim)
 }
 
 
+#if DYNAMIC_CHUNK
 Volume::Volume(float voxel_size)
 {
-	pg_len = 256;
+	chunk_len_in_voxels = 256;
 
-	int offset = pg_len * 10 + pg_len / 2;
-	pg_off = {offset, offset, offset, offset};
+	int offset = chunk_len_in_voxels * 10 + chunk_len_in_voxels / 2;
+	voxel_offset = {offset, offset, offset, offset};
 
-	auto a = pg_off[0] / pg_len;
-	auto b = pg_off[1] / pg_len;
-	auto c = pg_off[2] / pg_len;
+	auto a = voxel_offset[0] / chunk_len_in_voxels;
+	auto b = voxel_offset[1] / chunk_len_in_voxels;
+	auto c = voxel_offset[2] / chunk_len_in_voxels;
 	// auto d = pg_off[3] / pg_len;
 
-	pg_dir[a][b][c] = new Voxel[pg_len * pg_len * pg_len];
+	chunk_dir[a][b][c] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
 }
+#endif
 
 Volume::~Volume()
 {
@@ -281,7 +283,7 @@ void Volume::integrate(Frame frame)
 	const float *depthMap = frame.getDepthMap();
 	const BYTE *colorMap = frame.getColorMap();
 	int width = frame.getFrameWidth();
-	int height = frame.getFrameHeight();
+	// int height = frame.getFrameHeight();
 
 	// std::cout << intrinsic << std::endl;
 					int cnt = 0, cnt2 = 0;
@@ -292,7 +294,7 @@ void Volume::integrate(Frame frame)
 	Vector3f Pg, Pc, ray, normal;
 	Vector2i Pi;
 	Vector4uc color;
-	float depth, lambda, sdf, tsdf_weight, tsdf, weight, cos_angle;
+	float depth, lambda, sdf, tsdf, weight;
 	uint index;
 
 	// std::cout << "Integrate starting..." << std::endl;
