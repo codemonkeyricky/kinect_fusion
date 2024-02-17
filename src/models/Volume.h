@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "src/helpers/matrix.h"
 #include "src/helpers/Eigen.h"
 #include "src/models/Frame.h"
 // #include "src/helpers/octree.hpp"
@@ -99,10 +100,16 @@ private:
 	//map that tracks raycasted voxels
 	std::unordered_map<Vector3i, bool, matrix_hash<Vector3i>> visitedVoxels;
 
+	Voxel *pg_dir[20][20][20] = {};
+	int pg_len;
+	vector4i pg_off;
+
 public:
 	Volume();
 	//! Initializes an empty volume dataset.
 	Volume(Vector3f &min_, Vector3f &max_, float voxel_size = 0.025f, uint dim = 1);
+
+	Volume(float voxel_size = 0.025f);
 
 	~Volume();
 
@@ -210,7 +217,8 @@ public:
 		return coord;
 	}
 
-	inline Vector3f worldToGrid(Vector3f& p) {
+	inline Vector3f worldToGrid(Vector3f &p)
+	{
 		Vector3f coord(0.0f, 0.0f, 0.0f);
 
 		coord[0] = (p[0] - min[0]) / (max[0] - min[0]) / ddx;

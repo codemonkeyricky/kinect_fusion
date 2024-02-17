@@ -30,6 +30,22 @@ Volume::Volume(Vector3f &min_, Vector3f &max_, float voxel_size, uint dim)
 	compute_ddx_dddx();
 }
 
+
+Volume::Volume(float voxel_size)
+{
+	pg_len = 256;
+
+	int offset = pg_len * 10 + pg_len / 2;
+	pg_off = {offset, offset, offset, offset};
+
+	auto a = pg_off[0] / pg_len;
+	auto b = pg_off[1] / pg_len;
+	auto c = pg_off[2] / pg_len;
+	// auto d = pg_off[3] / pg_len;
+
+	pg_dir[a][b][c] = new Voxel[pg_len * pg_len * pg_len];
+}
+
 Volume::~Volume()
 {
 	delete[] vol;

@@ -5,6 +5,10 @@ cc_test(
   srcs = ["volume_test.cpp"],
   deps = [
     "@com_google_googletest//:gtest_main",
-    "//src/helpers:octree",
+    "//src/models:volume",
     ],
+    linkopts = [
+        "-lfreeimage",
+  ]
 )
+        
