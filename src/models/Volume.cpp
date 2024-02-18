@@ -100,7 +100,7 @@ void Volume::setNewBoundingPoints(Vector3f& min_, Vector3f& max_)
 void Volume::updateColor(Vector3i voxelCoords, Vector4uc& color, bool notVisited) {
 	float weight = 1.0;
 	//std::cout << voxelCoords << std::endl;
-	Voxel& vox = get(voxelCoords[0], voxelCoords[1], voxelCoords[2]);
+	Voxel &vox = get({voxelCoords[0], voxelCoords[1], voxelCoords[2], 0});
 
 	if (notVisited)
 		vox.setColor(color);
@@ -127,21 +127,22 @@ void Volume::updateColor(Vector3f point, Vector4uc &color, bool notVisited)
 Vector3f Volume::calculateNormal(const Vector3f &point)
 {
 	//Vector3f shiftedXup, shiftedXdown, shiftedYup, shiftedYdown, shiftedZup, shiftedZdown;
-	Vector3f shiftedXup, shiftedYup, shiftedZup;
+	vector4f shiftedXup, shiftedYup, shiftedZup;
 	float x_dir, y_dir, z_dir;
 	Vector3f normal;
+	vector4f pp = {point[0], point[1], point[2], 0};
 
-	shiftedXup = point;
+	shiftedXup = pp;
 	shiftedXup[0] += 1;
 	//shiftedXdown = point;
 	//shiftedXdown[0] -= 1;
 
-	shiftedYup = point;
+	shiftedYup = pp;
 	shiftedYup[1] += 1;
 	//shiftedYdown = point;
 	//shiftedYdown[1] -= 1;
 
-	shiftedZup = point;
+	shiftedZup = pp;
 	shiftedZup[2] += 1;
 	//shiftedZdown = point;
 	//shiftedZdown[2] -= 1;
@@ -155,31 +156,25 @@ Vector3f Volume::calculateNormal(const Vector3f &point)
 	float sdfZup = trilinearInterpolation(shiftedYup);
 	//float sdfZdown = trilinearInterpolation(shiftedYdown);
 
-	float sdfPoint = trilinearInterpolation(point);
-
-	if (sdfXup == std::numeric_limits<float>::max() ||
-		sdfYup == std::numeric_limits<float>::max() ||
-		sdfZup == std::numeric_limits<float>::max() ||
-		sdfPoint == std::numeric_limits<float>::max())
-		return Vector3f(MINF, MINF, MINF);
+	float sdfPoint = trilinearInterpolation(pp);
 
 	x_dir = (sdfXup - sdfPoint) / (dddx);
 	y_dir = (sdfYup - sdfPoint) / (dddy);
 	z_dir = (sdfZup - sdfPoint) / (dddz);
 
-	normal = Vector3f{ x_dir, y_dir, z_dir };
+	normal = Vector3f{x_dir, y_dir, z_dir};
 	normal.normalize();
 
 	return normal;
 }
 
-float Volume::trilinearInterpolation(const Vector3f &p) const
-{
-	vector4f tmp;
-	for (auto i = 0; i < 3; ++i)
-		tmp[i] = p(i);
-	trilinearInterpolation(tmp);
-}
+// float Volume::trilinearInterpolation(const Vector3f &p) const
+// {
+// 	vector4f tmp;
+// 	for (auto i = 0; i < 3; ++i)
+// 		tmp[i] = p(i);
+// 	trilinearInterpolation(tmp);
+// }
 
 // trilinear interpolation of a point in voxel grid coordinates to get SDF at the point
 float Volume::trilinearInterpolation(const vector4f &p) const
@@ -187,14 +182,14 @@ float Volume::trilinearInterpolation(const vector4f &p) const
 	Vector3i start = {(int)p[0], (int)p[1], (int)p[2]};
 	float c000, c001, c010, c011, c100, c101, c110, c111;
 
-	c000 = get(start[0] + 0, start[1] + 0, start[2] + 0).getTSDF();
-	c100 = get(start[0] + 1, start[1] + 0, start[2] + 0).getTSDF();
-	c001 = get(start[0] + 0, start[1] + 0, start[2] + 1).getTSDF();
-	c101 = get(start[0] + 1, start[1] + 0, start[2] + 1).getTSDF();
-	c010 = get(start[0] + 0, start[1] + 1, start[2] + 0).getTSDF();
-	c110 = get(start[0] + 1, start[1] + 1, start[2] + 0).getTSDF();
-	c011 = get(start[0] + 0, start[1] + 1, start[2] + 1).getTSDF();
-	c111 = get(start[0] + 1, start[1] + 1, start[2] + 1).getTSDF();
+	c000 = get({start[0] + 0, start[1] + 0, start[2] + 0, 0}).getTSDF();
+	c100 = get({start[0] + 1, start[1] + 0, start[2] + 0, 0}).getTSDF();
+	c001 = get({start[0] + 0, start[1] + 0, start[2] + 1, 0}).getTSDF();
+	c101 = get({start[0] + 1, start[1] + 0, start[2] + 1, 0}).getTSDF();
+	c010 = get({start[0] + 0, start[1] + 1, start[2] + 0, 0}).getTSDF();
+	c110 = get({start[0] + 1, start[1] + 1, start[2] + 0, 0}).getTSDF();
+	c011 = get({start[0] + 0, start[1] + 1, start[2] + 1, 0}).getTSDF();
+	c111 = get({start[0] + 1, start[1] + 1, start[2] + 1, 0}).getTSDF();
 
 	float xd, yd, zd;
 
@@ -274,7 +269,7 @@ inline vector4i round(const vector4f &v)
 
 // using given frame calculate TSDF values for all voxels in the grid
 // __attribute__((optimize("O0")))
-void Volume::integrate(Frame frame)
+void Volume::integrate(Frame &frame)
 {
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
 	const Matrix4f cameraToWorld = worldToCamera.inverse();
@@ -294,7 +289,7 @@ void Volume::integrate(Frame frame)
 	Vector3f Pg, Pc, ray, normal;
 	Vector2i Pi;
 	Vector4uc color;
-	float depth, lambda, sdf, tsdf, weight;
+	float depth, lambda, sdf, tsdf;
 	uint index;
 
 	// std::cout << "Integrate starting..." << std::endl;
@@ -342,7 +337,7 @@ void Volume::integrate(Frame frame)
 
 					// get the previous value and weight
 					tsdf = vol[getPosFromTuple(i, j, k)].getTSDF();
-					weight = vol[getPosFromTuple(i, j, k)].getWeight();
+					// weight = vol[getPosFromTuple(i, j, k)].getWeight();
 					color = vol[getPosFromTuple(i, j, k)].getColor();
 
 					if (sdf >= -TRUNCATION && depth != MINF)

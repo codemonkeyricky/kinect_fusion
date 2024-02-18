@@ -34,6 +34,7 @@ Frame &RayCaster::raycast()
 	const Matrix3f intrinsic_inverse = frame.getIntrinsicMatrix().inverse();
 	Vector3f translation = cameraToWorld.block(0, 3, 3, 1);
 	Matrix3f rotationMatrix = cameraToWorld.block(0, 0, 3, 3);
+	vector4f rs, rn;
 	Vector4uc color;
 
 	int width = frame.getFrameWidth();
@@ -67,7 +68,9 @@ Frame &RayCaster::raycast()
 			// std::cout << i << " " << j << std::endl;
 
 			// starting point is the position of the camera (translation) in grid coordinates
-			ray_start = vol.worldToGrid(translation);
+			rs = vol.worldToGrid({translation[0], translation[1], translation[2], 0});
+			for (auto i = 0; i < 3; ++i)
+				ray_start[i] = rs[i];
 
 			// calculate the direction vector as vector from camera position to the pixel(i, j)s world coordinates
 			index = i * width + j;
@@ -86,7 +89,9 @@ Frame &RayCaster::raycast()
 			ray_next = Vector3f{float(j), float(i), 1.0f};
 			ray_next = intrinsic_inverse * ray_next;
 			ray_next = rotationMatrix * ray_next + translation;
-			ray_next = vol.worldToGrid(ray_next);
+			rn = vol.worldToGrid({ray_next[0], ray_next[1], ray_next[2], 0});
+			for (auto i = 0; i < 3; ++i)
+				ray_next[i] = rn[i];
 
 			ray_dir = ray_next - ray_start;
 			ray_dir = ray_dir.normalized();

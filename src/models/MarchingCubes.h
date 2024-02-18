@@ -491,56 +491,55 @@ bool ProcessVolumeCell(Volume* vol, int x, int y, int z, float iso, SimpleMesh* 
 {
 	MC_Gridcell cell;
 
-	Vector3f tmp;
+	vector4f tmp;
 	Voxel vox;
 
 	// cell corners
-	tmp = vol->gridToWorld(x + 1, y, z);
-	vox = vol->get(x + 1, y, z);
+	tmp = vol->gridToWorld({x + 1, y, z, 0});
+	vox = vol->get({x + 1, y, z, 0});
 
 	cell.p[0] = Vector3f(tmp[0], tmp[1], tmp[2]);
 	cell.val[0] = vox.getTSDF();
 	cell.color[0] = vox.getColor();
 
-	tmp = vol->gridToWorld(x, y, z);
-	vox = vol->get(x, y, z);
+	tmp = vol->gridToWorld({x, y, z, 0});
+	vox = vol->get({x, y, z, 0});
 	cell.p[1] = Vector3f(tmp[0], tmp[1], tmp[2]);
 	cell.val[1] = vox.getTSDF();
 	cell.color[1] = vox.getColor();
 
-
-	tmp = vol->gridToWorld(x, y + 1, z);
-	vox = vol->get(x, y + 1, z);
+	tmp = vol->gridToWorld({x, y + 1, z, 0});
+	vox = vol->get({x, y + 1, z});
 	cell.p[2] = Vector3f(tmp[0], tmp[1], tmp[2]);
 	cell.val[2] = vox.getTSDF();
 	cell.color[2] = vox.getColor();
 
-	tmp = vol->gridToWorld(x + 1, y + 1, z);
-	vox = vol->get(x + 1, y + 1, z);
+	tmp = vol->gridToWorld({x + 1, y + 1, z, 0});
+	vox = vol->get({x + 1, y + 1, z, 0});
 	cell.p[3] = Vector3f(tmp[0], tmp[1], tmp[2]);
 	cell.val[3] = vox.getTSDF();
 	cell.color[3] = vox.getColor();
 
-	tmp = vol->gridToWorld(x + 1, y, z + 1);
-	vox = vol->get(x + 1, y, z + 1);
+	tmp = vol->gridToWorld({x + 1, y, z + 1, 0});
+	vox = vol->get({x + 1, y, z + 1, 0});
 	cell.p[4] = Vector3f(tmp[0], tmp[1], tmp[2]);
 	cell.val[4] = vox.getTSDF();
 	cell.color[4] = vox.getColor();
 
-	tmp = vol->gridToWorld(x, y, z + 1);
-	vox = vol->get(x, y, z + 1);
+	tmp = vol->gridToWorld({x, y, z + 1, 0});
+	vox = vol->get({x, y, z + 1,0});
 	cell.p[5] = Vector3f(tmp[0], tmp[1], tmp[2]);
 	cell.val[5] = vox.getTSDF();
 	cell.color[5] = vox.getColor();
 
-	tmp = vol->gridToWorld(x, y + 1, z + 1);
-	vox = vol->get(x, y + 1, z + 1);
+	tmp = vol->gridToWorld({x, y + 1, z + 1, 0});
+	vox = vol->get({x, y + 1, z + 1, 0});
 	cell.p[6] = Vector3f(tmp[0], tmp[1], tmp[2]);
 	cell.val[6] = vox.getTSDF();
 	cell.color[6] = vox.getColor();
 
-	tmp = vol->gridToWorld(x + 1, y + 1, z + 1);
-	vox = vol->get(x + 1, y + 1, z + 1);
+	tmp = vol->gridToWorld({x + 1, y + 1, z + 1, 0});
+	vox = vol->get({x + 1, y + 1, z + 1, 0});
 	cell.p[7] = Vector3f(tmp[0], tmp[1], tmp[2]);
 	cell.val[7] = vox.getTSDF();
 	cell.color[7] = vox.getColor();
@@ -596,18 +595,18 @@ bool ProcessVolumeCell(Volume* vol, int x, int y, int z, float iso, SimpleMesh* 
 	for (int i1 = 0; i1 < numTris; i1++)
 	{
 		Vertex v0;
-		v0.position = Vector4f{ (float)tris[i1].p[0][0], (float)tris[i1].p[0][1], (float)tris[i1].p[0][2], 1.0f };
-		v0.color = Vector4uc{ tris[i1].color[0][0], tris[i1].color[0][1], tris[i1].color[0][2], tris[i1].color[0][3] };
+		v0.position = Vector4f{(float)tris[i1].p[0][0], (float)tris[i1].p[0][1], (float)tris[i1].p[0][2], 1.0f};
+		v0.color = Vector4uc{tris[i1].color[0][0], tris[i1].color[0][1], tris[i1].color[0][2], tris[i1].color[0][3]};
 
 		Vertex v1;
-		v1.position = Vector4f{ (float)tris[i1].p[1][0], (float)tris[i1].p[1][1], (float)tris[i1].p[1][2], 1.0f };
-		v1.color = Vector4uc{ tris[i1].color[1][0], tris[i1].color[1][1], tris[i1].color[1][2], tris[i1].color[1][3] };
+		v1.position = Vector4f{(float)tris[i1].p[1][0], (float)tris[i1].p[1][1], (float)tris[i1].p[1][2], 1.0f};
+		v1.color = Vector4uc{tris[i1].color[1][0], tris[i1].color[1][1], tris[i1].color[1][2], tris[i1].color[1][3]};
 
 		Vertex v2;
-		v2.position = Vector4f{ (float)tris[i1].p[2][0], (float)tris[i1].p[2][1], (float)tris[i1].p[2][2], 1.0f };
-		v2.color = Vector4uc{ tris[i1].color[2][0], tris[i1].color[2][1], tris[i1].color[2][2], tris[i1].color[2][3] };
+		v2.position = Vector4f{(float)tris[i1].p[2][0], (float)tris[i1].p[2][1], (float)tris[i1].p[2][2], 1.0f};
+		v2.color = Vector4uc{tris[i1].color[2][0], tris[i1].color[2][1], tris[i1].color[2][2], tris[i1].color[2][3]};
 
-		//std::cout << v0.position << std::endl;
+		// std::cout << v0.position << std::endl;
 
 		unsigned int vhandle[3];
 		vhandle[0] = mesh->addVertex(v0);
