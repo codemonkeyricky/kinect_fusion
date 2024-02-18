@@ -12,7 +12,8 @@
 #include "src/helpers/VirtualSensor.h"
 #include "src/helpers/matrix.h"
 
-class Frame {
+class Frame
+{
     friend class RayCaster;
 
 public:

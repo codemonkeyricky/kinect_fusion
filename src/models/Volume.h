@@ -140,11 +140,11 @@ public:
 	Vector3f calculateNormal(const Vector3f& point);
 
 	// trilinear interpolation of a point in voxel grid coordinates to get SDF at the point
-	float trilinearInterpolation(const Vector3f &p) const;
+	// float trilinearInterpolation(const Vector3f &p) const;
 	float trilinearInterpolation(const vector4f &p) const;
 
 	// using given frame calculate TSDF values for all voxels in the grid
-	void integrate(Frame frame);
+	void integrate(Frame &frame);
 
 	//! Zeros out the memory
 	void zeroOutMemory();
@@ -153,30 +153,6 @@ public:
 	inline uint getPosFromTuple(int x, int y, int z) const
 	{
 		return x * dy * dz + y * dz + z;
-	}
-
-	//! Set the value at (x_, y_, z_).
-	inline void set(uint x_, uint y_, uint z_, Voxel& v)
-	{
-		vol[getPosFromTuple(x_, y_, z_)] = v;
-	};
-
-	//! Set the value at (pos.x, pos.y, pos.z).
-	inline void set(const Vector3i& pos_, Voxel& v)
-	{
-		set(pos_[0], pos_[1], pos_[2], v);
-	};
-
-	//! Get the value at (x_, y_, z_).
-	inline Voxel &get(uint x_, uint y_, uint z_) const
-	{
-		return vol[getPosFromTuple(x_, y_, z_)];
-	};
-
-	//! Get the value at (pos.x, pos.y, pos.z).
-	inline Voxel& get(const Vector3i& pos_) const
-	{
-		return(get(pos_[0], pos_[1], pos_[2]));
 	}
 
 #if DYNAMIC_CHUNK
@@ -198,35 +174,11 @@ public:
 #else
 	inline Voxel &get(const vector4f &pos_) const
 	{
-		return (get((int)pos_[0], (int)pos_[1], (int)pos_[2]));
+		return vol[getPosFromTuple((int)pos_[0], (int)pos_[1], (int)pos_[2])];
 	}
 #endif // DYNAMIC_CHUNK
 
-	//! Returns the cartesian coordinates of node (i,j,k).
-	inline Vector3f gridToWorld(int i, int j, int k) const
-	{
-		Vector3f coord(0.0f, 0.0f, 0.0f);
-
-		coord[0] = min[0] + (max[0] - min[0]) * (float(i) * ddx);
-		coord[1] = min[1] + (max[1] - min[1]) * (float(j) * ddy);
-		coord[2] = min[2] + (max[2] - min[2]) * (float(k) * ddz);
-
-		return coord;
-	}
-
-	//! Returns the cartesian coordinates of a vector in grid coordinates (p.x, p.y, p.z).
-	inline Vector3f gridToWorld(Vector3f& p) const
-	{
-		Vector3f coord(0.0f, 0.0f, 0.0f);
-
-		coord[0] = min[0] + (max[0] - min[0]) * (p[0] * ddx);
-		coord[1] = min[1] + (max[1] - min[1]) * (p[1] * ddy);
-		coord[2] = min[2] + (max[2] - min[2]) * (p[2] * ddz);
-
-		return coord;
-	}
-
-	inline vector4f gridToWorld(vector4f &p) const
+	inline vector4f gridToWorld(const vector4f &p) const
 	{
 		vector4f coord;
 
@@ -237,9 +189,9 @@ public:
 		return coord;
 	}
 
-	inline Vector3f worldToGrid(Vector3f &p)
+	inline vector4f worldToGrid(const vector4f &p)
 	{
-		Vector3f coord(0.0f, 0.0f, 0.0f);
+		vector4f coord;
 
 		coord[0] = (p[0] - min[0]) / (max[0] - min[0]) / ddx;
 		coord[1] = (p[1] - min[1]) / (max[1] - min[1]) / ddy;
