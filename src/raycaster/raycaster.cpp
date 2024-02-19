@@ -111,7 +111,7 @@ Frame &RayCaster::raycast()
 
 	for (auto i = 0; i < rays.size(); ++i)
 	{
-			vector4f ray_current, ray_previous, p, v, n;
+		vector4f ray_current, ray_previous, p, v, n;
 		{
 			vector4f ray_start = rays[i][0];
 			vector4f ray_dir = rays[i][1];

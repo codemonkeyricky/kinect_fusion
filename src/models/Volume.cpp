@@ -30,11 +30,9 @@ Volume::Volume(Vector3f &min_, Vector3f &max_, float voxel_size, uint dim)
 	compute_ddx_dddx();
 }
 
-
-#if DYNAMIC_CHUNK
-Volume::Volume(float voxel_size)
+Volume::Volume(int voxels_per_chunk_side, float voxel_size)
 {
-	chunk_len_in_voxels = 256;
+	chunk_len_in_voxels = voxels_per_chunk_side;
 
 	int offset = chunk_len_in_voxels * 10 + chunk_len_in_voxels / 2;
 	voxel_offset = {offset, offset, offset, offset};
@@ -46,7 +44,6 @@ Volume::Volume(float voxel_size)
 
 	chunk_dir[a][b][c] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
 }
-#endif
 
 Volume::~Volume()
 {
@@ -269,7 +266,7 @@ inline vector4i round(const vector4f &v)
 
 // using given frame calculate TSDF values for all voxels in the grid
 // __attribute__((optimize("O0")))
-void Volume::integrate(Frame &frame)
+void Volume::integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax)
 {
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
 	const Matrix4f cameraToWorld = worldToCamera.inverse();

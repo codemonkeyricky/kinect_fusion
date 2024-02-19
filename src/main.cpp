@@ -88,6 +88,9 @@ int main()
 
     Renderer renderer;
 
+    vector4i bmin = {0, 0, 0, 0};
+    vector4i bmax = {256, 256, 256, 0};
+
     while (frameCount < MAX_FRAME_NUM && sensor.ProcessNextFrame())
     {
         float *depthMap = sensor.GetDepth();
@@ -144,7 +147,7 @@ int main()
             {
                 auto integrate_start = std::chrono::high_resolution_clock::now();
 
-                volume.integrate(curFrame);
+                volume.integrate(curFrame, bmin, bmax);
 
                 auto integrate_end = std::chrono::high_resolution_clock::now();
                 std::cout << "Integration latency: " << std::chrono::duration_cast<std::chrono::microseconds>(integrate_end - integrate_start).count() << " us" << std::endl;
