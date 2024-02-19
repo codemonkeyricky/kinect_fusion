@@ -45,6 +45,22 @@ Volume::Volume(int voxels_per_chunk_side, float voxel_size)
 	chunk_dir[a][b][c] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
 }
 
+void Volume::gridAlloc(const vector4f &va)
+{
+	vector4f pa = {va[0], va[1], va[2], 0};
+	vector4i frame;
+	for (auto i = 0; i < 4; ++i)
+		frame[i] = pa[i] / chunk_len_in_voxels;
+	if (!chunk_dir[frame[0]][frame[1]][frame[2]])
+		chunk_dir[frame[0]][frame[1]][frame[2]] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
+}
+
+#if DYNAMIC_CHUNK
+void Volume::setOrigin(const vector4f &va)
+{
+}
+#endif
+
 Volume::~Volume()
 {
 	delete[] vol;
