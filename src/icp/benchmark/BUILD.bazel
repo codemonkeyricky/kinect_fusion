@@ -1,0 +1,12 @@
+# load("@rules_cc//cc:defs.bzl", "cc_test")
+
+cc_test(
+    name = "benchmark",
+    srcs = ["benchmark.cc"],
+ #   copts = ["-Iexternal/benchmark/include"],
+    deps = [
+        "//src/helpers:matrix",
+#         "//lib:lib",
+        "@benchmark//:benchmark_main",
+    ],
+)

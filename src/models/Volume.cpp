@@ -30,21 +30,25 @@ Volume::Volume(Vector3f &min_, Vector3f &max_, float voxel_size, uint dim)
 	compute_ddx_dddx();
 }
 
-Volume::Volume(int voxels_per_chunk_side, float voxel_size)
+Volume::Volume(int voxels_per_chunk_side, float vox_size)
 {
 	chunk_len_in_voxels = voxels_per_chunk_side;
+	assert((voxels_per_chunk_side & (voxels_per_chunk_side - 1)) == 0);
 
-	int offset = chunk_len_in_voxels * 10 + chunk_len_in_voxels / 2;
-	voxel_offset = {offset, offset, offset, offset};
+	voxel_size = vox_size;
 
-	auto a = voxel_offset[0] / chunk_len_in_voxels;
-	auto b = voxel_offset[1] / chunk_len_in_voxels;
-	auto c = voxel_offset[2] / chunk_len_in_voxels;
-	// auto d = pg_off[3] / pg_len;
+	int offset = chunk_len_in_voxels / 2;
+	voxel_offset = {offset, offset, offset, 0};
 
-	chunk_dir[a][b][c] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
+	// auto a = voxel_offset[0] / chunk_len_in_voxels;
+	// auto b = voxel_offset[1] / chunk_len_in_voxels;
+	// auto c = voxel_offset[2] / chunk_len_in_voxels;
+	// // auto d = pg_off[3] / pg_len;
+
+	// chunk_dir[a][b][c] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
 }
 
+// __attribute__((optimize("O0")))
 void Volume::gridAlloc(const vector4f &va)
 {
 	vector4f pa = {va[0], va[1], va[2], 0};
@@ -52,14 +56,34 @@ void Volume::gridAlloc(const vector4f &va)
 	for (auto i = 0; i < 4; ++i)
 		frame[i] = pa[i] / chunk_len_in_voxels;
 	if (!chunk_dir[frame[0]][frame[1]][frame[2]])
-		chunk_dir[frame[0]][frame[1]][frame[2]] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
+	{
+		Voxel *base																		  ///< base pointer for init
+			= chunk_dir[frame[0]][frame[1]][frame[2]]									  ///< page directory
+			= new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels]; ///< alloc
+
+		/* initizliation */
+		for (auto i = 0; i < chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels; ++i)
+			base[i] = Voxel(1.0f, 0.0f, Vector4uc{0, 0, 0, 0});
+	}
 }
 
-#if DYNAMIC_CHUNK
-void Volume::setOrigin(const vector4f &va)
+void Volume::setOrigin(const vector4f &world)
 {
+	auto vox_phys = worldToVoxel(world);	
+
+	/* A vox volume can span 8 possible chunks - attempt to allocate all 8 */
+	vector4f corner;
+	for (auto i = 0; i < 2; ++i)
+		for (auto j = 0; j < 2; ++j)
+			for (auto k = 0; k < 2; ++k)
+			{
+				corner = {i == 0 ? vox_phys[i] - chunk_len_in_voxels / 2 : vox_phys[i] + chunk_len_in_voxels / 2 - 1,
+						  j == 0 ? vox_phys[j] - chunk_len_in_voxels / 2 : vox_phys[j] + chunk_len_in_voxels / 2 - 1,
+						  k == 0 ? vox_phys[k] - chunk_len_in_voxels / 2 : vox_phys[k] + chunk_len_in_voxels / 2 - 1};
+				gridAlloc(corner);
+			}
+	origin = world;
 }
-#endif
 
 Volume::~Volume()
 {
@@ -282,7 +306,7 @@ inline vector4i round(const vector4f &v)
 
 // using given frame calculate TSDF values for all voxels in the grid
 // __attribute__((optimize("O0")))
-void Volume::integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax)
+void Volume::integrate(Frame &frame)
 {
 	const Matrix4f worldToCamera = frame.getExtrinsicMatrix();
 	const Matrix4f cameraToWorld = worldToCamera.inverse();
@@ -294,8 +318,7 @@ void Volume::integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax)
 	// int height = frame.getFrameHeight();
 
 	// std::cout << intrinsic << std::endl;
-					int cnt = 0, cnt2 = 0;
-
+	int cnt = 0, cnt2 = 0;
 
 	// subscripts: g - global coordinate system | c - camera coordinate system | i - image space
 	// short notations: V - vector | P - point | sdf - signed distance field value | tsdf - truncated sdf
@@ -311,11 +334,15 @@ void Volume::integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax)
 	auto ex_translation = getTranslation(frame.getExtrinsicMatrix());
 	auto in = convertToArray(frame.getIntrinsicMatrix());
 
-	for (int i = 0; i < dx; i++)
+	auto vox = worldToVoxel(origin);
+
+	int half = chunk_len_in_voxels / 2;
+
+	for (int i = vox[0] - half; i < vox[0] + half; ++i)
 	{
-		for (int j = 0; j < dy; j++)
+		for (int j = vox[1] - half; j < vox[1] + half; ++j)
 		{
-			for (int k = 0; k < dz; k++)
+			for (int k = vox[2] - half; k < vox[2] + half; ++k)
 			{
 				vector4f p = {i, j, k, 0};
 
@@ -350,27 +377,28 @@ void Volume::integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax)
 					lambda = (pc / pc[2]).norm();
 					sdf = depth - ((pg - translation) / lambda).norm();
 
+					auto &voxel = get({i, j, k, 0});
+
 					// get the previous value and weight
-					tsdf = vol[getPosFromTuple(i, j, k)].getTSDF();
-					// weight = vol[getPosFromTuple(i, j, k)].getWeight();
-					color = vol[getPosFromTuple(i, j, k)].getColor();
+					tsdf = voxel.getTSDF();
+					color = voxel.getColor();
 
 					if (sdf >= -TRUNCATION && depth != MINF)
 					{
 						float current_tsdf = std::min(1.0f, sdf / TRUNCATION);
 						float current_weight = 1.0f;
-						float old_tsdf = vol[getPosFromTuple(i, j, k)].getTSDF();
-						float old_weight = vol[getPosFromTuple(i, j, k)].getWeight();
+						float old_tsdf = voxel.getTSDF();
+						float old_weight = voxel.getWeight();
 
 						auto updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
 						auto updated_weight = old_weight + current_weight;
 
-						vol[getPosFromTuple(i, j, k)].setTSDF(updated_tsdf);
-						vol[getPosFromTuple(i, j, k)].setWeight(updated_weight);
+						voxel.setTSDF(updated_tsdf);
+						voxel.setWeight(updated_weight);
 
 						if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
 						{
-							vol[getPosFromTuple(i, j, k)].setColor(
+							voxel.setColor(
 								Vector4uc{(const unsigned char)((color[0] * old_weight + colorMap[4 * index + 0] * current_weight) / (old_weight + current_weight)),
 										  (const unsigned char)((color[1] * old_weight + colorMap[4 * index + 1] * current_weight) / (old_weight + current_weight)),
 										  (const unsigned char)((color[2] * old_weight + colorMap[4 * index + 2] * current_weight) / (old_weight + current_weight)),
@@ -387,7 +415,7 @@ void Volume::integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax)
 	// tree->build((Octree::Vox *)vol, 128);
 	// auto stop = std::chrono::high_resolution_clock::now();
 	// auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-	// std::cout << "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
+	std::cout << "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
 	// assert(0);
 
 	// std::cout << "Integrate done!" << std::endl;

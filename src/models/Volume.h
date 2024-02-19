@@ -104,19 +104,18 @@ public:
     float trilinearInterpolation(const vector4f &p) const;
 
     // using given frame calculate TSDF values for all voxels in the grid
-    void integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax);
+    void integrate(Frame &frame); 
 
-#if DYNAMIC_CHUNK
     inline Voxel &get(const vector4f &va) const
     {
         vector4i pa;
         for (auto i = 0; i < 4; ++i)
-            pa[i] = va[i] + voxel_offset[i];
+            pa[i] = va[i]; //  + voxel_offset[i];
     
         vector4i frame, offset;
         for (auto i = 0; i < 4; ++i)
-            frame[i] = pa[i] / chunk_len_in_voxels,
-            offset[i] = pa[i] % chunk_len_in_voxels;
+            frame[i] = pa[i] & ~(chunk_len_in_voxels - 1),
+            offset[i] = pa[i] & (chunk_len_in_voxels - 1);
 
         return chunk_dir[frame[0]]
                         [frame[1]]
@@ -126,25 +125,16 @@ public:
 
     void setOrigin(const vector4f &va);
 
-#else
-    inline Voxel &get(const vector4f &pos_) const
-    {
-        return vol[getPosFromTuple((int)pos_[0], (int)pos_[1], (int)pos_[2])];
-    }
-#endif // DYNAMIC_CHUNK
-
-        /*
-         *  Voxel to world coordinate
-         */
+    /*
+     *  Voxel to world coordinate
+     */
     inline vector4f voxelToWorld(const vector4f &p) const
     {
-        vector4f coord;
+        vector4f world;
+        for (auto i = 0; i < 4; ++i)
+            world[i] = (p[i] - (float)voxel_offset[i]) * voxel_size;
 
-        coord[0] = min[0] + (max[0] - min[0]) * (p[0] * ddx);
-        coord[1] = min[1] + (max[1] - min[1]) * (p[1] * ddy);
-        coord[2] = min[2] + (max[2] - min[2]) * (p[2] * ddz);
-
-        return coord;
+        return world;
     }
 
     /* 
@@ -152,13 +142,12 @@ public:
      */
     inline vector4f worldToVoxel(const vector4f &p) const
     {
-        vector4f coord;
+        /* Convert world coordinate to vox */
+        vector4f vox;
+        for (auto i = 0; i < 4; ++i)
+            vox[i] = p[i] / voxel_size + (float)voxel_offset[i];
 
-        coord[0] = (p[0] - min[0]) / (max[0] - min[0]) / ddx;
-        coord[1] = (p[1] - min[1]) / (max[1] - min[1]) / ddy;
-        coord[2] = (p[2] - min[2]) / (max[2] - min[2]) / ddz;
-
-        return coord;
+        return vox;
     }
 
     //! Returns the Data.
@@ -246,50 +235,48 @@ public:
     //! Updates the color of a voxel for a point p in grid coordinates
     void updateColor(Vector3f point, Vector4uc& color, bool notVisited);
 
-    //! Checks if the point in grid coordinates is in the volume
-    bool isPointInVolume(Vector3f &point)
+    // __attribute__((optimize("O0")))
+    bool isPointInVolume(vector4f &voxel)
     {
-        return !(
-            point[0] > dx - 1 ||
-            point[1] > dy - 1 ||
-            point[2] > dz - 1 ||
-            point[0] < 0 ||
-            point[1] < 0 ||
-            point[2] < 0);
-    }
+        vector4f originVox = worldToVoxel(origin);
+        int half = chunk_len_in_voxels / 2;
 
-    bool isPointInVolume(vector4f &point)
-    {
-        return !(
-            point[0] > dx - 1 ||
-            point[1] > dy - 1 ||
-            point[2] > dz - 1 ||
-            point[0] < 0 ||
-            point[1] < 0 ||
-            point[2] < 0);
+        vector4f mmin, mmax;
+        for (auto i = 0; i < 4; ++i)
+            mmin[i] = originVox[i] - half,
+            mmax[i] = originVox[i] + half;
+
+        for (auto i = 0; i < 3; ++i)
+            if (voxel[i] < mmin[i])
+                return false;
+
+        for (auto i = 0; i < 3; ++i)
+            if (voxel[i] > mmax[i] - 1)
+                return false;
+
+        return true;
     }
 
     //! Checks if the trilinear interpolation possible for a given point (we have to have 8 surrounding points)
-    bool isInterpolationPossible(Vector3f &point)
+    bool isInterpolationPossible(vector4f &voxel)
     {
-        return !(
-            point[0] > dx - 3 ||
-            point[1] > dy - 3 ||
-            point[2] > dz - 3 ||
-            point[0] < 2 ||
-            point[1] < 2 ||
-            point[2] < 2);
-    }
+        vector4f originVox = worldToVoxel(origin);
+        int half = chunk_len_in_voxels / 2;
 
-    bool isInterpolationPossible(vector4f &point)
-    {
-        return !(
-            point[0] > dx - 3 ||
-            point[1] > dy - 3 ||
-            point[2] > dz - 3 ||
-            point[0] < 2 ||
-            point[1] < 2 ||
-            point[2] < 2);
+        vector4f mmin, mmax;
+        for (auto i = 0; i < 4; ++i)
+            mmin[i] = originVox[i] - half,
+            mmax[i] = originVox[i] + half;
+
+        for (auto i = 0; i < 3; ++i)
+            if (voxel[i] < mmin[i] + 2)
+                return false;
+
+        for (auto i = 0; i < 3; ++i)
+            if (voxel[i] > mmax[i] - 3)
+                return false;
+
+        return true;
     }
 
 private:
@@ -331,7 +318,9 @@ private:
      *  negative coordinates everything is offset to positive range. 
      */
 
+    vector4f origin;
     int chunk_len_in_voxels;
+    float voxel_size; 
     Voxel *chunk_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
     vector4i voxel_offset;
 
