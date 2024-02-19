@@ -143,7 +143,7 @@ public:
     /* 
      *  Voxel to world coordinate
      */
-    inline vector4f gridToWorld(const vector4f &p) const
+    inline vector4f voxelToWorld(const vector4f &p) const
     {
     	vector4f coord;
 
@@ -157,7 +157,7 @@ public:
     /* 
      *  World to voxel coordinate
      */
-    inline vector4f worldToGrid(const vector4f &p)
+    inline vector4f worldToVoxel(const vector4f &p)
     {
     	vector4f coord;
 

@@ -68,7 +68,7 @@ Frame &RayCaster::raycast()
 			// std::cout << i << " " << j << std::endl;
 
 			// starting point is the position of the camera (translation) in grid coordinates
-			rs = vol.worldToGrid({translation[0], translation[1], translation[2], 0});
+			rs = vol.worldToVoxel({translation[0], translation[1], translation[2], 0});
 			for (auto i = 0; i < 3; ++i)
 				ray_start[i] = rs[i];
 
@@ -84,12 +84,12 @@ Frame &RayCaster::raycast()
 			ray_dir = rotationMatrix * ray_dir;
 			ray_dir = ray_dir.normalized();
 			*/
-			// ray_next = vol.worldToGrid(frame.getVertexGlobal(index));
+			// ray_next = vol.worldToVoxel(frame.getVertexGlobal(index));
 
 			ray_next = Vector3f{float(j), float(i), 1.0f};
 			ray_next = intrinsic_inverse * ray_next;
 			ray_next = rotationMatrix * ray_next + translation;
-			rn = vol.worldToGrid({ray_next[0], ray_next[1], ray_next[2], 0});
+			rn = vol.worldToVoxel({ray_next[0], ray_next[1], ray_next[2], 0});
 			for (auto i = 0; i < 3; ++i)
 				ray_next[i] = rn[i];
 
@@ -150,7 +150,7 @@ Frame &RayCaster::raycast()
 					}
 
 					// std::cout << ray_previous << std::endl << ray_current << std::endl << ray_dir << std::endl << sdf_1 << " " << sdf_2 << std::endl << p << std::endl;
-					v = vol.gridToWorld(p);
+					v = vol.voxelToWorld(p);
 					// n = vol.calculateNormal(p);
 					/*
 					if (n == Vector3f{ MINF, MINF, MINF }) {
@@ -181,7 +181,7 @@ Frame &RayCaster::raycast()
 				}
 				else if (vol.get(ray_current).getTSDF() == 0)
 				{
-					v = vol.gridToWorld(ray_current);
+					v = vol.voxelToWorld(ray_current);
 					// n = vol.calculateNormal(ray_current);
 					/*
 					if (n == Vector3f{ MINF, MINF, MINF }) {

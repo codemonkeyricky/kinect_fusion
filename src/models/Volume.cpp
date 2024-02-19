@@ -304,7 +304,7 @@ void Volume::integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax)
 				vector4f p = {i, j, k, 0};
 
 				// project the grid point into image space
-				auto pg = gridToWorld(p);
+				auto pg = voxelToWorld(p);
 				auto pc = ex_rotation * pg + ex_translation;
 				auto pi = in * pc;
 				for (int i = 0; i < 4; ++i)
@@ -312,7 +312,7 @@ void Volume::integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax)
 
 				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
 
-				// Pg = gridToWorld(i, j, k);
+				// Pg = voxelToWorld(i, j, k);
 				// Pc = Frame::transformPoint(Pg, worldToCamera);
 				// Pi = Frame::perspectiveProjection(Pc, intrinsic);
 
