@@ -59,7 +59,8 @@ int main()
     Vector3f min_point = Vector3f{MIN_POINT};
     Vector3f max_point = Vector3f{MAX_POINT};
 
-    Volume volume = Volume(min_point, max_point, VOXEL_SIZE, 3);
+    // Volume volume = Volume(min_point, max_point, VOXEL_SIZE, 3);
+    Volume volume = Volume(256, 0.015f);
     RayCaster rc = RayCaster(volume);
     Matrix4f identity = Matrix4f::Identity(4, 4); // initial estimate
     Matrix4f pose = identity;
@@ -134,7 +135,7 @@ int main()
                 pose = icp.estimatePose(pose, ICP_ITERATIONS);
 
                 auto icp_end = std::chrono::high_resolution_clock::now();
-                std::cout << "ICP latency: " << std::chrono::duration_cast<std::chrono::microseconds>(icp_end - icp_start).count() << " us" << std::endl;
+                std::cout << "ICP latency: " << std::chrono::duration_cast<std::chrono::milliseconds>(icp_end - icp_start).count() << " ms" << std::endl;
             }
 
             vector4f p;
@@ -152,7 +153,7 @@ int main()
                 volume.integrate(curFrame, bmin, bmax);
 
                 auto integrate_end = std::chrono::high_resolution_clock::now();
-                std::cout << "Integration latency: " << std::chrono::duration_cast<std::chrono::microseconds>(integrate_end - integrate_start).count() << " us" << std::endl;
+                std::cout << "Integration latency: " << std::chrono::duration_cast<std::chrono::milliseconds>(integrate_end - integrate_start).count() << " ms" << std::endl;
             }
 
             {
@@ -162,7 +163,7 @@ int main()
                 curFrame = rc.raycast();
 
                 auto raycast_end = std::chrono::high_resolution_clock::now();
-                std::cout << "Raycast latency: " << std::chrono::duration_cast<std::chrono::microseconds>(raycast_end - raycast_start).count() << " us" << std::endl;
+                std::cout << "Raycast latency: " << std::chrono::duration_cast<std::chrono::milliseconds>(raycast_end - raycast_start).count() << " ms" << std::endl;
             }
 
             {
@@ -179,7 +180,7 @@ int main()
                 }
 
                 auto mc_end = std::chrono::high_resolution_clock::now();
-                std::cout << "MarchingCube latency: " << std::chrono::duration_cast<std::chrono::microseconds>(mc_end - mc_start).count() << " us" << std::endl;
+                std::cout << "MarchingCube latency: " << std::chrono::duration_cast<std::chrono::milliseconds>(mc_end - mc_start).count() << " ms" << std::endl;
 
                 do
                 {
