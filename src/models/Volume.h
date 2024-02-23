@@ -40,17 +40,17 @@ public:
         return color;
     }
 
-    void setTSDF(float v)
+    inline void setTSDF(float v)
     {
         value = v;
     }
 
-    void setWeight(float w)
+    inline void setWeight(float w)
     {
         weight = w;
     }
 
-    void setColor(Vector4uc c)
+    inline void setColor(Vector4uc c)
     {
         color = c;
     }
@@ -121,7 +121,7 @@ public:
         return chunk_dir[frame[0]]
                         [frame[1]]
                         [frame[2]]
-                        [pa[0] * chunk_len_in_voxels * chunk_len_in_voxels + pa[1] * chunk_len_in_voxels + pa[2]];
+                        [offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2]];
     } 
 
     void setOrigin(const vector4f &va);
@@ -150,7 +150,7 @@ public:
     /* 
      *  World to voxel coordinate
      */
-    inline vector4f worldToVoxel(const vector4f &p)
+    inline vector4f worldToVoxel(const vector4f &p) const
     {
         vector4f coord;
 

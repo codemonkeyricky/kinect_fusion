@@ -323,8 +323,6 @@ void Volume::integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax)
 				auto pg = voxelToWorld(p);
 				auto pc = ex_rotation * pg + ex_translation;
 				auto pi = in * pc;
-				for (int i = 0; i < 4; ++i)
-					pi[i] /= pi[2];
 
 				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
 
@@ -333,13 +331,17 @@ void Volume::integrate(Frame &frame, const vector4i &bmin, const vector4i &bmax)
 				// Pi = Frame::perspectiveProjection(Pc, intrinsic);
 
 				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
-				auto pii = round(pi);
-				// auto pii = pi;
-				auto x = pi[0] = pii[0];
-				auto y = pi[1] = pii[1];
 
-				if (x >= 0 && x < 640 && y >= 0 && y < 480)
+				if (pi[0] >= 0 && pi[0] < 640 * pi[2] && pi[1] >= 0 && pi[1] < 480 * pi[2])
 				{
+					for (int i = 0; i < 4; ++i)
+						pi[i] /= pi[2];
+					vector4f pii;
+					for (auto i = 0; i < 4; ++i)
+						pii[i] = round(pi[i]);
+					auto x = pi[0] = pii[0];
+					auto y = pi[1] = pii[1];
+
 					// get the depth of the point
 					index = pi[1] * width + pi[0];
 					depth = depthMap[index];
