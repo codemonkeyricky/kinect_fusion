@@ -93,6 +93,8 @@ int main()
 
     while (frameCount < MAX_FRAME_NUM && sensor.ProcessNextFrame())
     {
+        auto frame_start = std::chrono::high_resolution_clock::now();
+
         float *depthMap = sensor.GetDepth();
         BYTE *colorMap = sensor.GetColorRGBX();
         Matrix3f depthIntrinsics = sensor.GetDepthIntrinsics();
@@ -205,6 +207,13 @@ int main()
 
         prevFrame = curFrame;
         frameCount++;
+
+        auto frame_end = std::chrono::high_resolution_clock::now();
+        float frame_latency = std::chrono::duration_cast<std::chrono::milliseconds>(frame_end - frame_start).count();
+        std::cout << "### frame latency: "
+                  << frame_latency << " ms, "
+                  << "FPS: " << 1.0f / (frame_latency / 1000)
+                  << std::endl;
     }
 
     return 0;
