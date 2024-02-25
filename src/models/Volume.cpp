@@ -422,7 +422,11 @@ void Volume::integrate(Frame &frame)
 			{
 				int bit = (*tsdf_one[0][0][0])[(i / 8) * 32 * 32 + (j / 8) * 32 + (k / 8)];
 				for (auto w = 0; w < 8; ++w)
-					bit &= get({i, j, k + w, 0}).getTSDF() <= 0 ? 0 : 1;
+				{
+					float v = get({i, j, k + w, 1}).getTSDF();
+					int signBit = ((*(int *)&v) >> 31) & 1;
+					bit &= !signBit;
+				}
 				(*tsdf_one[0][0][0])[(i / 8) * 32 * 32 + (j / 8) * 32 + (k / 8)] = bit;
 			}
 
