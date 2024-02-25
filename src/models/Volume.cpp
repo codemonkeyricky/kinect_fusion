@@ -307,6 +307,24 @@ inline vector4i round(const vector4f &v)
     return rv;
 }
 
+void Volume::generateTSDFOnes(const vector4f &vox, int half)
+{
+	(*tsdf_one[0][0][0]).set();
+	for (int i = vox[0] - half; i < vox[0] + half; ++i)
+		for (int j = vox[1] - half; j < vox[1] + half; ++j)
+			for (int k = vox[2] - half; k < vox[2] + half; k += 8)
+			{
+				int bit = (*tsdf_one[0][0][0])[(i / 8) * 32 * 32 + (j / 8) * 32 + (k / 8)];
+				for (auto w = 0; w < 8; ++w)
+				{
+					float v = get({i, j, k + w, 1}).getTSDF();
+					int signBit = ((*(int *)&v) >> 31) & 1;
+					bit &= !signBit;
+				}
+				(*tsdf_one[0][0][0])[(i / 8) * 32 * 32 + (j / 8) * 32 + (k / 8)] = bit;
+			}
+}
+
 // using given frame calculate TSDF values for all voxels in the grid
 // __attribute__((optimize("O0")))
 void Volume::integrate(Frame &frame)
@@ -415,27 +433,13 @@ void Volume::integrate(Frame &frame)
 		}
 	}
 
-	(*tsdf_one[0][0][0]).set();
-	for (int i = vox[0] - half; i < vox[0] + half; ++i)
-		for (int j = vox[1] - half; j < vox[1] + half; ++j)
-			for (int k = vox[2] - half; k < vox[2] + half; k += 8)
-			{
-				int bit = (*tsdf_one[0][0][0])[(i / 8) * 32 * 32 + (j / 8) * 32 + (k / 8)];
-				for (auto w = 0; w < 8; ++w)
-				{
-					float v = get({i, j, k + w, 1}).getTSDF();
-					int signBit = ((*(int *)&v) >> 31) & 1;
-					bit &= !signBit;
-				}
-				(*tsdf_one[0][0][0])[(i / 8) * 32 * 32 + (j / 8) * 32 + (k / 8)] = bit;
-			}
+	generateTSDFOnes(vox, half);
 
 	// auto start = std::chrono::high_resolution_clock::now();
 	// tree->build((Octree::Vox *)vol, 128);
 	// auto stop = std::chrono::high_resolution_clock::now();
 	// auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-	std::cout
-		<< "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
+	std::cout << "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
 	// assert(0);
 
 	// std::cout << "Integrate done!" << std::endl;

@@ -358,5 +358,5 @@ private:
 
     void gridAlloc(const vector4f &va);
 
-    
+    void generateTSDFOnes(const vector4f &vox, int half);
 };
