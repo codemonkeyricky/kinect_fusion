@@ -3,6 +3,7 @@
 #include <limits>
 #include <unordered_map>
 #include <vector>
+#include <bitset>
 
 #include "src/helpers/matrix.h"
 #include "src/helpers/Eigen.h"
@@ -74,6 +75,7 @@ struct matrix_hash : std::unary_function<T, size_t> {
     }
 };
 
+constexpr int chunk_len_in_voxels = 256;
 //! A regular volume dataset
 class Volume
 {
@@ -104,8 +106,9 @@ public:
     float trilinearInterpolation(const vector4f &p) const;
 
     // using given frame calculate TSDF values for all voxels in the grid
-    void integrate(Frame &frame); 
+    void integrate(Frame &frame);
 
+    // __attribute__((optimize("O0")))
     inline Voxel &get(const vector4f &va) const
     {
         vector4i pa;
@@ -114,7 +117,7 @@ public:
     
         vector4i frame, offset;
         for (auto i = 0; i < 4; ++i)
-            frame[i] = pa[i] & ~(chunk_len_in_voxels - 1),
+            frame[i] = (pa[i] & ~(chunk_len_in_voxels - 1)) >> 8,
             offset[i] = pa[i] & (chunk_len_in_voxels - 1);
 
         return chunk_dir[frame[0]]
@@ -279,6 +282,35 @@ public:
         return true;
     }
 
+    // inline void TSDF_bitset(const vector4f &va, float v)
+    // {
+    //     vector4i pa;
+    //     for (auto i = 0; i < 4; ++i)
+    //         pa[i] = va[i];
+
+    //     vector4i frame, offset;
+    //     for (auto i = 0; i < 4; ++i)
+    //         frame[i] = (pa[i] & ~(chunk_len_in_voxels - 1)) >> 8,
+    //         offset[i] = pa[i] & (chunk_len_in_voxels - 1);
+
+    //     (*tsdf_one[frame[0]][frame[1]][frame[2]])
+    //         [offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2]] = (v > 0.0f);
+    // }
+
+    inline bool TSDF_bitget(const vector4f &va)
+    {
+        vector4i pa;
+        for (auto i = 0; i < 4; ++i)
+            pa[i] = va[i];
+
+        vector4i frame, offset;
+        for (auto i = 0; i < 4; ++i)
+            frame[i] = (pa[i] & ~(chunk_len_in_voxels - 1)) >> 8,
+            offset[i] = pa[i] & (chunk_len_in_voxels - 1);
+
+        return (*tsdf_one[frame[0]][frame[1]][frame[2]])
+            [offset[0] / 8 * 32 * 32 + offset[1] / 8 * 32 + offset[2] / 8];
+    }
 private:
     //! Get index of voxel at (x, y, z)
     inline uint getPosFromTuple(int x, int y, int z) const
@@ -319,10 +351,12 @@ private:
      */
 
     vector4f origin;
-    int chunk_len_in_voxels;
     float voxel_size; 
     Voxel *chunk_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
+    std::bitset<32 * 32 * 32> *tsdf_one[20][20][20] = {}; ///< Each chunk has chunk_len_in_voxels^3 voxels
     vector4i voxel_offset;
 
     void gridAlloc(const vector4f &va);
+
+    
 };

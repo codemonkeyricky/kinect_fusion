@@ -130,11 +130,14 @@ Frame &RayCaster::raycast()
 
 				ray_current += ray_dir;
 
-				if (!vol.isInterpolationPossible(ray_previous) || !vol.isInterpolationPossible(ray_current))
+				if (!vol.isInterpolationPossible(ray_current))
 				{
 					mistake(*output_vertices_global, *output_normals_global);
 					break;
 				}
+
+				if (vol.TSDF_bitget(ray_current))
+					continue;
 
 				if (vol.get(ray_current).getTSDF() < 0)
 				{

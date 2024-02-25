@@ -32,7 +32,7 @@ Volume::Volume(Vector3f &min_, Vector3f &max_, float voxel_size, uint dim)
 
 Volume::Volume(int voxels_per_chunk_side, float vox_size)
 {
-	chunk_len_in_voxels = voxels_per_chunk_side;
+	// chunk_len_in_voxels = voxels_per_chunk_side;
 	assert((voxels_per_chunk_side & (voxels_per_chunk_side - 1)) == 0);
 
 	voxel_size = vox_size;
@@ -48,7 +48,7 @@ Volume::Volume(int voxels_per_chunk_side, float vox_size)
 	// chunk_dir[a][b][c] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
 }
 
-// __attribute__((optimize("O0")))
+__attribute__((optimize("O0")))
 void Volume::gridAlloc(const vector4f &va)
 {
 	vector4f pa = {va[0], va[1], va[2], 0};
@@ -64,6 +64,9 @@ void Volume::gridAlloc(const vector4f &va)
 		/* initizliation */
 		for (auto i = 0; i < chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels; ++i)
 			base[i] = Voxel(1.0f, 0.0f, Vector4uc{0, 0, 0, 0});
+
+		tsdf_one[frame[0]][frame[1]][frame[2]] = new std::bitset<32 * 32 * 32>();
+		volatile bool dummy = (*tsdf_one[frame[0]][frame[1]][frame[2]])[32 * 32 * 32 - 1];
 	}
 }
 
@@ -393,6 +396,7 @@ void Volume::integrate(Frame &frame)
 						auto updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
 						auto updated_weight = old_weight + current_weight;
 
+						// TSDF_bitset({i, j, k, 0}, updated_tsdf);
 						voxel.setTSDF(updated_tsdf);
 						voxel.setWeight(updated_weight);
 
@@ -411,11 +415,23 @@ void Volume::integrate(Frame &frame)
 		}
 	}
 
+	(*tsdf_one[0][0][0]).set();
+	for (int i = vox[0] - half; i < vox[0] + half; ++i)
+		for (int j = vox[1] - half; j < vox[1] + half; ++j)
+			for (int k = vox[2] - half; k < vox[2] + half; k += 8)
+			{
+				int bit = (*tsdf_one[0][0][0])[(i / 8) * 32 * 32 + (j / 8) * 32 + (k / 8)];
+				for (auto w = 0; w < 8; ++w)
+					bit &= get({i, j, k + w, 0}).getTSDF() <= 0 ? 0 : 1;
+				(*tsdf_one[0][0][0])[(i / 8) * 32 * 32 + (j / 8) * 32 + (k / 8)] = bit;
+			}
+
 	// auto start = std::chrono::high_resolution_clock::now();
 	// tree->build((Octree::Vox *)vol, 128);
 	// auto stop = std::chrono::high_resolution_clock::now();
 	// auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-	std::cout << "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
+	std::cout
+		<< "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
 	// assert(0);
 
 	// std::cout << "Integrate done!" << std::endl;
