@@ -48,6 +48,8 @@ Volume::Volume(int voxels_per_chunk_side, float vox_size)
 	// chunk_dir[a][b][c] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
 }
 
+static float tsdf_array[256 * 256 * 256];
+
 // __attribute__((optimize("O0")))
 void Volume::gridAlloc(const vector4f &va)
 {
@@ -64,6 +66,14 @@ void Volume::gridAlloc(const vector4f &va)
 		/* initizliation */
 		for (auto i = 0; i < chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels; ++i)
 			base[i] = Voxel(1.0f, 0.0f, Vector4uc{0, 0, 0, 0});
+
+		float *tsdf_base							 ///< base pointer for init
+			= tsdf_dir[frame[0]][frame[1]][frame[2]] ///< page directory
+			= (float *)&tsdf_array[0];
+
+		/* initizliation */
+		for (auto i = 0; i < chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels; ++i)
+			tsdf_base[i] = 1.0f;
 	}
 }
 
@@ -219,14 +229,14 @@ float Volume::trilinearInterpolation(const vector4f &p) const
 	Vector3i start = {(int)p[0], (int)p[1], (int)p[2]};
 	float c000, c001, c010, c011, c100, c101, c110, c111;
 
-	c000 = get({start[0] + 0, start[1] + 0, start[2] + 0, 0}).getTSDF();
-	c100 = get({start[0] + 1, start[1] + 0, start[2] + 0, 0}).getTSDF();
-	c001 = get({start[0] + 0, start[1] + 0, start[2] + 1, 0}).getTSDF();
-	c101 = get({start[0] + 1, start[1] + 0, start[2] + 1, 0}).getTSDF();
-	c010 = get({start[0] + 0, start[1] + 1, start[2] + 0, 0}).getTSDF();
-	c110 = get({start[0] + 1, start[1] + 1, start[2] + 0, 0}).getTSDF();
-	c011 = get({start[0] + 0, start[1] + 1, start[2] + 1, 0}).getTSDF();
-	c111 = get({start[0] + 1, start[1] + 1, start[2] + 1, 0}).getTSDF();
+	c000 = getTSDF({start[0] + 0, start[1] + 0, start[2] + 0, 0});
+	c100 = getTSDF({start[0] + 1, start[1] + 0, start[2] + 0, 0});
+	c001 = getTSDF({start[0] + 0, start[1] + 0, start[2] + 1, 0});
+	c101 = getTSDF({start[0] + 1, start[1] + 0, start[2] + 1, 0});
+	c010 = getTSDF({start[0] + 0, start[1] + 1, start[2] + 0, 0});
+	c110 = getTSDF({start[0] + 1, start[1] + 1, start[2] + 0, 0});
+	c011 = getTSDF({start[0] + 0, start[1] + 1, start[2] + 1, 0});
+	c111 = getTSDF({start[0] + 1, start[1] + 1, start[2] + 1, 0});
 
 	float xd, yd, zd;
 
@@ -338,6 +348,14 @@ void Volume::integrate(Frame &frame)
 
 	int half = chunk_len_in_voxels / 2;
 
+	/*
+	 * Note: 
+ 	 * The integrate algortihm is compute expensive with little data dependency.
+	 * Only about 10% of the voxels require updating TSDF and weight.
+	 */
+
+	auto t0 = std::chrono::high_resolution_clock::now();
+
 	for (int i = vox[0] - half; i < vox[0] + half; ++i)
 	{
 		for (int j = vox[1] - half; j < vox[1] + half; ++j)
@@ -351,23 +369,10 @@ void Volume::integrate(Frame &frame)
 				auto pc = ex_rotation * pg + ex_translation;
 				auto pi = in * pc;
 
-				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
-
-				// Pg = voxelToWorld(i, j, k);
-				// Pc = Frame::transformPoint(Pg, worldToCamera);
-				// Pi = Frame::perspectiveProjection(Pc, intrinsic);
-
-				// std::cout << Pg << std::endl << Pc << std::endl << Pi << std::endl;
-
 				if (pi[0] >= 0 && pi[0] < 640 * pi[2] && pi[1] >= 0 && pi[1] < 480 * pi[2])
 				{
 					for (int i = 0; i < 4; ++i)
-						pi[i] /= pi[2];
-					vector4f pii;
-					for (auto i = 0; i < 4; ++i)
-						pii[i] = round(pi[i]);
-					auto x = pi[0] = pii[0];
-					auto y = pi[1] = pii[1];
+						pi[i] = round(pi[i] / pi[2]);
 
 					// get the depth of the point
 					index = pi[1] * width + pi[0];
@@ -380,20 +385,20 @@ void Volume::integrate(Frame &frame)
 					auto &voxel = get({i, j, k, 0});
 
 					// get the previous value and weight
-					tsdf = voxel.getTSDF();
+					tsdf = getTSDF({i, j, k, 0});
 					color = voxel.getColor();
 
 					if (sdf >= -TRUNCATION && depth != MINF)
 					{
 						float current_tsdf = std::min(1.0f, sdf / TRUNCATION);
 						float current_weight = 1.0f;
-						float old_tsdf = voxel.getTSDF();
+						float old_tsdf = tsdf; // voxel.getTSDF();
 						float old_weight = voxel.getWeight();
 
 						auto updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
 						auto updated_weight = old_weight + current_weight;
 
-						voxel.setTSDF(updated_tsdf);
+						setTSDF({i, j, k, 0}, updated_tsdf);
 						voxel.setWeight(updated_weight);
 
 						if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
@@ -411,11 +416,12 @@ void Volume::integrate(Frame &frame)
 		}
 	}
 
-	// auto start = std::chrono::high_resolution_clock::now();
 	// tree->build((Octree::Vox *)vol, 128);
-	// auto stop = std::chrono::high_resolution_clock::now();
-	// auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
-	std::cout << "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
+	auto t1 = std::chrono::high_resolution_clock::now();
+	// auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
+	// std::cout << "### integrate latency: " << duration.count() << " ms" << std::endl;
+
+	// std::cout << "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
 	// assert(0);
 
 	// std::cout << "Integrate done!" << std::endl;

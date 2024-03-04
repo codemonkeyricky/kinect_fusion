@@ -130,24 +130,24 @@ Frame &RayCaster::raycast()
 
 				ray_current += ray_dir;
 
-				if (!vol.isInterpolationPossible(ray_previous) || !vol.isInterpolationPossible(ray_current))
+				if (!vol.isInterpolationPossible(ray_current))
 				{
 					mistake(*output_vertices_global, *output_normals_global);
 					break;
 				}
 
-				if (vol.get(ray_current).getTSDF() < 0)
+				if (vol.getTSDF(ray_current) < 0)
 				{
 					sdf_1 = vol.trilinearInterpolation(ray_previous);
 					sdf_2 = vol.trilinearInterpolation(ray_current);
 
 					p = ray_previous - (ray_dir * sdf_1) / (sdf_2 - sdf_1);
 
-					if (!vol.isInterpolationPossible(p))
-					{
-						mistake(*output_vertices_global, *output_normals_global);
-						break;
-					}
+					// if (!vol.isInterpolationPossible(p))
+					// {
+					// 	mistake(*output_vertices_global, *output_normals_global);
+					// 	break;
+					// }
 
 					// std::cout << ray_previous << std::endl << ray_current << std::endl << ray_dir << std::endl << sdf_1 << " " << sdf_2 << std::endl << p << std::endl;
 					v = vol.voxelToWorld(p);
@@ -179,7 +179,7 @@ Frame &RayCaster::raycast()
 
 					break;
 				}
-				else if (vol.get(ray_current).getTSDF() == 0)
+				else if (vol.getTSDF(ray_current) == 0)
 				{
 					v = vol.voxelToWorld(ray_current);
 					// n = vol.calculateNormal(ray_current);

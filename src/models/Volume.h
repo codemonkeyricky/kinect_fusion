@@ -16,19 +16,18 @@ using namespace Eigen;
 class Voxel
 {
 private:
-    float value;
     float weight;
     Vector4uc color;
 
 public:
     Voxel() {}
 
-    Voxel(float value_, float weight_, Vector4uc color_) : value{value_}, weight{weight_}, color{color_} {}
+    Voxel(float value_, float weight_, Vector4uc color_) : weight{weight_}, color{color_} {}
 
-    inline float getTSDF() const
-    {
-        return value;
-    }
+    // inline float getTSDF() const
+    // {
+    //     return value;
+    // }
 
     inline float getWeight()
     {
@@ -40,10 +39,10 @@ public:
         return color;
     }
 
-    inline void setTSDF(float v)
-    {
-        value = v;
-    }
+    // inline void setTSDF(float v)
+    // {
+    //     value = v;
+    // }
 
     inline void setWeight(float w)
     {
@@ -104,19 +103,47 @@ public:
     float trilinearInterpolation(const vector4f &p) const;
 
     // using given frame calculate TSDF values for all voxels in the grid
-    void integrate(Frame &frame); 
+    void integrate(Frame &frame);
 
-    inline Voxel &get(const vector4f &va) const
+    // __attribute__((optimize("O0")))
+    inline std::array<vector4i, 2> va_remap(const vector4f &va) const
     {
         vector4i pa;
         for (auto i = 0; i < 4; ++i)
-            pa[i] = va[i]; //  + voxel_offset[i];
+            pa[i] = va[i];
     
         vector4i frame, offset;
         for (auto i = 0; i < 4; ++i)
             frame[i] = pa[i] & ~(chunk_len_in_voxels - 1),
             offset[i] = pa[i] & (chunk_len_in_voxels - 1);
+        
+        return {frame, offset};
+    }
 
+    // __attribute__((optimize("O0")))
+    inline float getTSDF(const vector4f &va) const
+    {
+        auto [page, offset] = va_remap(va);
+        return tsdf_dir[page[0]]
+                       [page[1]]
+                       [page[2]]
+                       [offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2]];
+        // return 0;
+    }
+
+    // __attribute__((optimize("O0")))
+    inline void setTSDF(const vector4f &va, float v) const
+    {
+        auto [page, offset] = va_remap(va);
+        tsdf_dir[page[0]]
+                [page[1]]
+                [page[2]]
+                [offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2]] = v;
+    }
+
+    inline Voxel &get(const vector4f &va) const
+    {
+        auto [frame, offset] = va_remap(va);
         return chunk_dir[frame[0]]
                         [frame[1]]
                         [frame[2]]
@@ -322,6 +349,7 @@ private:
     int chunk_len_in_voxels;
     float voxel_size; 
     Voxel *chunk_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
+    float *tsdf_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
     vector4i voxel_offset;
 
     void gridAlloc(const vector4f &va);
