@@ -1,6 +1,6 @@
 COPTS := 
 COPTS += --cxxopt=-std=gnu++17
-COPTS += --copt=-O3
+COPTS += --copt=-O0
 COPTS += --copt=-DDYNAMIC_CHUNK 
 
 BAZEL_OPT := -c dbg
@@ -23,3 +23,7 @@ test:
 
 perf: 
 	perf record -g ./bazel-bin/kinect_fusion
+
+
+dbg_vuh:
+	gdb -tui bazel-bin/src/vuh/example

@@ -1,0 +1,65 @@
+cc_library(
+    name = "vuh",
+    visibility = ["//visibility:public"],
+    hdrs = [
+    ],
+    includes = [
+        "src/include", 
+    ],
+    srcs = [
+        "src/device.cpp",
+        "src/error.cpp",
+        "src/instance.cpp", 
+        "src/utils.cpp",
+        "src/include/vuh/error.h",
+        "src/include/vuh/instance.h",
+        "src/include/vuh/array.hpp",
+        "src/include/vuh/program.hpp",
+        "src/include/vuh/device.h",
+        "src/include/vuh/traits.hpp",
+        "src/include/vuh/delayed.hpp",
+        "src/include/vuh/resource.hpp",
+        "src/include/vuh/utils.h",
+        "src/include/vuh/arr/arrayProperties.h", 
+        "src/include/vuh/arr/arrayIter.hpp",
+        "src/include/vuh/arr/arrayView.hpp",
+        "src/include/vuh/arr/copy_async.hpp",
+        "src/include/vuh/arr/deviceArray.hpp",
+        "src/include/vuh/arr/arrayUtils.h",
+        "src/include/vuh/arr/allocDevice.hpp",
+        "src/include/vuh/arr/basicArray.hpp",
+        "src/include/vuh/arr/hostArray.hpp",
+    ],
+)
+
+
+genrule(
+    name = "shader_src",
+    srcs = [
+        "test/shaders/saxpy.comp"
+        ],
+    outs = ["saxpy.spv"],
+    cmd = "glslc src/vuh/test/shaders/saxpy.comp -o $@", # //  && xxd --include $@ > $@ ",
+    output_to_bindir = 1,
+)
+
+cc_library(
+  name = "shader_spv",
+  hdrs = [":shader_src"],
+)
+
+cc_binary(
+    name = "example",
+    visibility = ["//visibility:public"],
+    srcs =  [
+        "src/main.cpp",
+    ], 
+    deps = [
+        "//src/vuh:vuh",
+        "//src/vuh:shader_spv",
+        "//src/helpers:matrix",
+    ],
+    linkopts = [
+        "-lvulkan",
+    ]
+)
