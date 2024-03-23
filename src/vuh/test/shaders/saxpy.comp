@@ -50,6 +50,7 @@ void main() {
         }
 
         tsdf_array[k] = k;
+        weight_array[k] = k;
     }
 }
 
