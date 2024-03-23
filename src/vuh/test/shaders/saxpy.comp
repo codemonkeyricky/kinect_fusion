@@ -28,7 +28,7 @@ void main() {
     vec4 pc = params.rotation * pg + params.translation;
     ivec4 pi = ivec4(params.intrinsics * pc); 
 
-    if (pi[0] >= 0 && pi[0] < 640 && pi[0] >= 0 && pi[1] < 480) 
+    // if (pi[0] >= 0 && pi[0] < 640 && pi[0] >= 0 && pi[1] < 480) 
     {
         // calculate the sdf value
         float lambda = length(pc / pc[2]);
@@ -49,6 +49,7 @@ void main() {
             weight_array[k] = updated_weight;
         }
 
+        tsdf_array[k] = k;
     }
 }
 
