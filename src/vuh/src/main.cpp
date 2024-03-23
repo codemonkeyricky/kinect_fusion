@@ -41,7 +41,7 @@ auto main()-> int {
    matrix4f rot;
    vector4f trans; 
    matrix4f intrs; 
-   program.grid(32, 32,32).spec(64)({rot, trans, intrs, 640, 480, 256}, d_d, d_y, d_x); // run once, wait for completion
+   program.grid(32, 32,32).spec(64)({rot, trans, intrs, w, h, len}, d_d, d_y, d_x); // run once, wait for completion
 
    auto t2 = std::chrono::high_resolution_clock::now();
 

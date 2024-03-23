@@ -11,67 +11,49 @@ layout(push_constant) uniform Parameters {  // push constants
 } params;
 
 layout(std430, binding = 0) buffer lay0 { float depth[]; }; // array parameters
-layout(std430, binding = 1) buffer lay1 { float tsdf[]; };
-layout(std430, binding = 2) buffer lay2 { float weight[]; };
+layout(std430, binding = 1) buffer lay1 { float tsdf_array[]; };
+layout(std430, binding = 2) buffer lay2 { float weight_array[]; };
 
-void main(){
-   const uint x = gl_GlobalInvocationID.x; // current offset
-   const uint y = gl_GlobalInvocationID.y; // current offset
-   const uint z = gl_GlobalInvocationID.z; // current offset
-   // if(params.size <= id){                   // drop threads outside the buffer
-   //    return;
-   // }
-   uint k = x * params.l * params.l + y * params.l + z;
-   tsdf[k] = k; 
-   weight[k] = -k;
+void main() {
+    const uint x = gl_GlobalInvocationID.x; // current offset
+    const uint y = gl_GlobalInvocationID.y; // current offset
+    const uint z = gl_GlobalInvocationID.z; // current offset
+ 
+    uint k = x * params.l * params.l + y * params.l + z;
+
+    float TRUNCATION = -0.06f;
+    float MINF = -1000000000.0f;
+
+    vec4 pg = vec4(x, y, z, 0); 
+    vec4 pc = params.rotation * pg + params.translation;
+    ivec4 pi = ivec4(params.intrinsics * pc); 
+
+    if (pi[0] >= 0 && pi[0] < 640 && pi[0] >= 0 && pi[1] < 480) 
+    {
+        // calculate the sdf value
+        float lambda = length(pc / pc[2]);
+		float d = depth[pi[1] * 640 + pi[0]];
+        float sdf = d - length((pg - params.translation) / lambda); 
+
+        if(sdf >= TRUNCATION && d != MINF) 
+        {
+            float current_tsdf = min(1.0f, sdf / TRUNCATION);
+            float current_weight = 1.0f;
+            float old_tsdf = tsdf_array[k];
+            float old_weight = weight_array[k];
+
+            float updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
+            float updated_weight = old_weight + current_weight;
+
+            tsdf_array[k] = updated_tsdf;
+            weight_array[k] = updated_weight;
+        }
+
+    }
 }
 
 
 /* 
-#version 320 es
-
-layout(local_size_x = 64) in;
-
-
-
-layout(binding = 0) readonly buffer Input0 {
-    mat4 data; 
-} rotation;
-
-layout(binding = 1) readonly buffer Input1 {
-    vec4 data; 
-} translation;
-
-layout(binding = 2) readonly buffer Input2 {
-    mat4 data; 
-} intrinsics;
-
-layout(binding = 3) readonly buffer Input3 {
-    float data[];
-} depth;
-
-layout(binding = 4) buffer Input4 {
-    float data[];
-} tsdf_array;
-
-layout(binding = 5) buffer Input5 {
-    float data[];
-} weight_in;
-
-layout(binding = 6) buffer Output0 {
-    float data[];
-} tsdf_out;
-
-layout(binding = 6) buffer Output1 {
-    float data[];
-} weight_out;
-
-void main()
-{
-    uint x = gl_GlobalInvocationID.x;
-    uint y = gl_GlobalInvocationID.y;
-    uint z = gl_GlobalInvocationID.z;
-
 tsdf_out.data[x] = 1.0f;
 
     // float TRUNCATION = -0.06f;
