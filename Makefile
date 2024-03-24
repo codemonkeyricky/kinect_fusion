@@ -1,6 +1,6 @@
 COPTS := 
 COPTS += --cxxopt=-std=gnu++17
-COPTS += --copt=-O3
+COPTS += --copt=-O0
 COPTS += --copt=-DDYNAMIC_CHUNK 
 
 BAZEL_OPT := -c dbg

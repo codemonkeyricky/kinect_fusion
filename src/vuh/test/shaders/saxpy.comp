@@ -22,7 +22,8 @@ void main() {
 
     uint tsdf_in = tsdf_array[k];
     uint weight_in = weight_array[k];
-    uint tsdf_out = 0;
+    uint tsdf_out = tsdf_in;
+    uint weight_out = weight_in;
     for (uint i = 0; i < 4; ++i)
     {
         // actual index
@@ -60,10 +61,11 @@ void main() {
                 float updated_weight = old_weight + current_weight;
 
                 uint tsdfi = uint(updated_tsdf / 127.0f);
+                tsdf_out &= ~(0xff << shift);
                 tsdf_out |= (tsdfi & 0xff) << shift;
 
                 uint weighti = max(uint(updated_weight), 255); 
-                tsdf_out |= (tsdfi & 0xff) << shift;
+                weight_out |= (weighti & 0xff) << shift;
             }
 
         }
@@ -74,7 +76,6 @@ void main() {
 
         // out
     }
-    tsdf_array[k] = tsdf_out;
 
     // if (pi[0] >= 0 && pi[0] < 640 && pi[0] >= 0 && pi[1] < 480) 
     // {
