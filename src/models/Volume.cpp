@@ -48,7 +48,7 @@ Volume::Volume(int voxels_per_chunk_side, float vox_size)
 	// chunk_dir[a][b][c] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
 }
 
-static float tsdf_array[256 * 256 * 256];
+static int8_t tsdf_array[256 * 256 * 256];
 
 // __attribute__((optimize("O0")))
 void Volume::gridAlloc(const vector4f &va)
@@ -67,13 +67,13 @@ void Volume::gridAlloc(const vector4f &va)
 		for (auto i = 0; i < chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels; ++i)
 			base[i] = Voxel(1.0f, 0.0f, Vector4uc{0, 0, 0, 0});
 
-		float *tsdf_base							 ///< base pointer for init
+		int8_t *tsdf_base							 ///< base pointer for init
 			= tsdf_dir[frame[0]][frame[1]][frame[2]] ///< page directory
-			= (float *)&tsdf_array[0];
+			= (int8_t *)&tsdf_array[0];
 
 		/* initizliation */
 		for (auto i = 0; i < chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels; ++i)
-			tsdf_base[i] = 1.0f;
+			tsdf_base[i] = 127;
 	}
 }
 

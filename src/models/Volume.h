@@ -120,15 +120,28 @@ public:
         return {frame, offset};
     }
 
+    inline auto tsdf_int8_to_float(int8_t tsdf) const -> float
+    {
+        return ((float)tsdf / 127.0f);
+    };
+
+    inline auto tsdf_float_to_int8(float tsdf) const -> int8_t
+    {
+        int8_t v = roundf(tsdf * 127.0f);
+        v = std::min((int8_t)127, v);
+        v = std::max((int8_t)-127, v);
+        return v;
+    };
+
     // __attribute__((optimize("O0")))
     inline float getTSDF(const vector4f &va) const
     {
         auto [page, offset] = va_remap(va);
-        return tsdf_dir[page[0]]
-                       [page[1]]
-                       [page[2]]
-                       [offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2]];
-        // return 0;
+        int8_t tsdf = tsdf_dir[page[0]]
+                              [page[1]]
+                              [page[2]]
+                              [offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2]];
+        return tsdf_int8_to_float(tsdf);
     }
 
     // __attribute__((optimize("O0")))
@@ -138,7 +151,7 @@ public:
         tsdf_dir[page[0]]
                 [page[1]]
                 [page[2]]
-                [offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2]] = v;
+                [offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2]] = tsdf_float_to_int8(v);
     }
 
     inline Voxel &get(const vector4f &va) const
@@ -349,8 +362,9 @@ private:
     int chunk_len_in_voxels;
     float voxel_size; 
     Voxel *chunk_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
-    float *tsdf_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
+    int8_t *tsdf_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
     vector4i voxel_offset;
 
     void gridAlloc(const vector4f &va);
+
 };
