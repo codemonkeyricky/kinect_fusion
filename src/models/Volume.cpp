@@ -356,6 +356,11 @@ void Volume::integrate(Frame &frame)
 
 	auto t0 = std::chrono::high_resolution_clock::now();
 
+#if TRACK_RANGE
+	static std::array<float, 2> tsdf_range = {1e9, -1e9};
+	static std::array<float, 2> weight_range = {1e9, -1e9};
+#endif
+
 	for (int i = vox[0] - half; i < vox[0] + half; ++i)
 	{
 		for (int j = vox[1] - half; j < vox[1] + half; ++j)
@@ -410,6 +415,13 @@ void Volume::integrate(Frame &frame)
 										  (const unsigned char)((color[3] * old_weight + colorMap[4 * index + 3] * current_weight) / (old_weight + current_weight))});
 						}
 						++cnt;
+
+#if TRACK_RANGE
+						weight_range[0] = std::min(weight_range[0], updated_weight);
+						weight_range[1] = std::max(weight_range[1], updated_weight);
+						tsdf_range[0] = std::min(tsdf_range[0], updated_tsdf);
+						tsdf_range[1] = std::max(tsdf_range[1], updated_tsdf);
+#endif
 					}
 				}
 			}
@@ -420,6 +432,11 @@ void Volume::integrate(Frame &frame)
 	auto t1 = std::chrono::high_resolution_clock::now();
 	// auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0);
 	// std::cout << "### integrate latency: " << duration.count() << " ms" << std::endl;
+
+#if TRACK_RANGE
+	std::cout << "tsdf range = [" << tsdf_range[0] << ", " << tsdf_range[1] << "]" << std::endl;
+	std::cout << "weight range = [" << weight_range[0] << ", " << weight_range[1] << "]" << std::endl;
+#endif
 
 	// std::cout << "### cnt = " << cnt << ", cnt2 " << cnt2 << std::endl;
 	// assert(0);
