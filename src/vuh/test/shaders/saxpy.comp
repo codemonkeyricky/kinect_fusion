@@ -15,11 +15,7 @@ layout(std430, binding = 1) buffer lay1 { uint tsdf_array[]; };
 layout(std430, binding = 2) buffer lay2 { uint weight_array[]; };
 
 void main() {
-    const uint x = gl_GlobalInvocationID.x;
-    const uint y = gl_GlobalInvocationID.y;
-    const uint z = gl_GlobalInvocationID.z;
- 
-    uint k = x;
+    uint k = gl_GlobalInvocationID.x;
 
     float TRUNCATION = -0.06f;
     float MINF = -1000000000.0f;
@@ -51,7 +47,7 @@ void main() {
         {
             float lambda = length(pc / pc[2]);
     		float d = depth[pi[1] * 640 + pi[0]];
-            float sdf = d - length((pg - params.translation) / lambda); 
+float sdf = d - length((pg - params.translation) / lambda); 
 
             if(sdf >= TRUNCATION && d != MINF) 
             {
