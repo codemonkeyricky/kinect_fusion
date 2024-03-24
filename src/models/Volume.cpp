@@ -48,7 +48,10 @@ Volume::Volume(int voxels_per_chunk_side, float vox_size)
 	// chunk_dir[a][b][c] = new Voxel[chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels];
 }
 
-static float tsdf_array[256 * 256 * 256];
+constexpr int ARRAY_LEN = 256 * 256 * 256 / 4;
+
+static uint32_t tsdf_array[ARRAY_LEN];
+static uint32_t weight_array[ARRAY_LEN];
 
 // __attribute__((optimize("O0")))
 void Volume::gridAlloc(const vector4f &va)
@@ -67,13 +70,19 @@ void Volume::gridAlloc(const vector4f &va)
 		for (auto i = 0; i < chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels; ++i)
 			base[i] = Voxel(1.0f, 0.0f, Vector4uc{0, 0, 0, 0});
 
-		float *tsdf_base							 ///< base pointer for init
+		/* tsdf initizliation */
+		uint32_t *tsdf_base							 ///< base pointer for init
 			= tsdf_dir[frame[0]][frame[1]][frame[2]] ///< page directory
-			= (float *)&tsdf_array[0];
+			= (uint32_t *)&tsdf_array[0];
+		for (auto i = 0; i < ARRAY_LEN; ++i) 
+			tsdf_base[i] = 0x7f7f7f7f;
 
-		/* initizliation */
-		for (auto i = 0; i < chunk_len_in_voxels * chunk_len_in_voxels * chunk_len_in_voxels; ++i)
-			tsdf_base[i] = 1.0f;
+		/* weight initizliation */
+		uint32_t *weight_base							 ///< base pointer for init
+			= weight_dir[frame[0]][frame[1]][frame[2]] ///< page directory
+			= (uint32_t *)&weight_array[0];
+		for (auto i = 0; i < ARRAY_LEN; ++i) 
+			weight_base[i] = 0;
 	}
 }
 
@@ -398,13 +407,13 @@ void Volume::integrate(Frame &frame)
 						float current_tsdf = std::min(1.0f, sdf / TRUNCATION);
 						float current_weight = 1.0f;
 						float old_tsdf = tsdf; // voxel.getTSDF();
-						float old_weight = voxel.getWeight();
+						float old_weight = getWeight({i, j, k, 0});
 
 						auto updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
 						auto updated_weight = old_weight + current_weight;
 
 						setTSDF({i, j, k, 0}, updated_tsdf);
-						voxel.setWeight(updated_weight);
+						setWeight({i, j, k, 0}, updated_weight);
 
 						if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
 						{

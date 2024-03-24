@@ -16,37 +16,37 @@ using namespace Eigen;
 class Voxel
 {
 private:
-    float weight;
+    uint8_t weight;
     Vector4uc color;
+
+    inline auto weight_uint8_to_float(uint8_t weight) const -> float
+    {
+        return (float)weight;
+    };
+
+    inline auto weight_float_to_uint8(float w) const -> uint8_t
+    {
+        return (uint8_t)std::min(255, (int)w); 
+    }
 
 public:
     Voxel() {}
 
     Voxel(float value_, float weight_, Vector4uc color_) : weight{weight_}, color{color_} {}
 
-    // inline float getTSDF() const
+    // inline float getWeight()
     // {
-    //     return value;
+    //     return weight_uint8_to_float(weight);
     // }
-
-    inline float getWeight()
-    {
-        return weight;
-    }
+    
+    // inline void setWeight(float w)
+    // {
+    //     weight = weight_float_to_uint8(w);
+    // }
 
     Vector4uc getColor()
     {
         return color;
-    }
-
-    // inline void setTSDF(float v)
-    // {
-    //     value = v;
-    // }
-
-    inline void setWeight(float w)
-    {
-        weight = w;
     }
 
     inline void setColor(Vector4uc c)
@@ -120,26 +120,73 @@ public:
         return {frame, offset};
     }
 
+    inline auto tsdf_int8_to_float(int8_t tsdf) const -> float
+    {
+        return ((float)tsdf / 127.0f);
+    };
+
+    inline auto tsdf_float_to_int8(float tsdf) const -> int8_t
+    {
+        int8_t v = roundf(tsdf * 127.0f);
+        v = std::min((int8_t)127, v);
+        v = std::max((int8_t)-127, v);
+        return v;
+    };
+
     // __attribute__((optimize("O0")))
     inline float getTSDF(const vector4f &va) const
     {
         auto [page, offset] = va_remap(va);
-        return tsdf_dir[page[0]]
-                       [page[1]]
-                       [page[2]]
-                       [offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2]];
-        // return 0;
+        int k = offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2];
+        const auto tsdf = tsdf_dir[page[0]]
+                                  [page[1]]
+                                  [page[2]]
+                                  [k / 4];
+        const auto shift = (k % 4) * 8;
+        return tsdf_int8_to_float((tsdf & (0xff << shift)) >> shift);
     }
 
     // __attribute__((optimize("O0")))
     inline void setTSDF(const vector4f &va, float v) const
     {
         auto [page, offset] = va_remap(va);
-        tsdf_dir[page[0]]
-                [page[1]]
-                [page[2]]
-                [offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2]] = v;
+        int k = offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2];
+        auto &tsdf = tsdf_dir[page[0]]
+                             [page[1]]
+                             [page[2]]
+                             [k / 4];
+        auto shift = (k % 4) * 8;
+        tsdf &= ~(0xff << shift);
+        tsdf |= tsdf_float_to_int8(v) << shift;
     }
+
+    inline float getWeight(const vector4f &va) const
+    {
+        auto [page, offset] = va_remap(va);
+        int k = offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2];
+        auto shift = (k % 4) * 8;
+        int8_t weight = weight_dir[page[0]]
+                                  [page[1]]
+                                  [page[2]]
+                                  [k / 4];
+        return (weight & (0xff << shift)) >> shift;
+    }
+
+    // __attribute__((optimize("O0")))
+    inline void setWeight(const vector4f &va, float v) const
+    {
+        auto [page, offset] = va_remap(va);
+        int k = offset[0] * chunk_len_in_voxels * chunk_len_in_voxels + offset[1] * chunk_len_in_voxels + offset[2];
+        auto shift = (k % 4) * 8;
+        auto &weight = weight_dir[page[0]]
+                                 [page[1]]
+                                 [page[2]]
+                                 [k / 4];
+        weight &= ~(0xff << shift);
+        v = std::min(v, 255.0f);
+        weight |= ((uint8_t)v) << shift;
+    }
+
 
     inline Voxel &get(const vector4f &va) const
     {
@@ -349,8 +396,10 @@ private:
     int chunk_len_in_voxels;
     float voxel_size; 
     Voxel *chunk_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
-    float *tsdf_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
+    uint32_t *tsdf_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
+    uint32_t *weight_dir[20][20][20] = {};    ///< Each chunk has chunk_len_in_voxels^3 voxels
     vector4i voxel_offset;
 
     void gridAlloc(const vector4f &va);
+
 };
