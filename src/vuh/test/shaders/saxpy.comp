@@ -50,7 +50,7 @@ void main() {
     		float d = depth[pi[1] * 640 + pi[0]];
             float sdf = d - length((pg - params.translation) / lambda); 
 
-            if(sdf >= TRUNCATION && d != MINF) 
+            if (sdf >= TRUNCATION && d != MINF) 
             {
                 float current_tsdf = min(1.0f, sdf / TRUNCATION);
                 float current_weight = 1.0f;
@@ -65,41 +65,11 @@ void main() {
                 tsdf_out |= (tsdfi & 0xff) << shift;
 
                 uint weighti = max(uint(updated_weight), 255); 
+                weight_out &= ~(0xff << shift);
                 weight_out |= (weighti & 0xff) << shift;
             }
-
         }
-
-        /*
-         * 
-         */
-
-        // out
     }
-
-    // if (pi[0] >= 0 && pi[0] < 640 && pi[0] >= 0 && pi[1] < 480) 
-    // {
-    //     // calculate the sdf value
-
-    //     if(sdf >= TRUNCATION && d != MINF) 
-    //     {
-    //         float current_tsdf = min(1.0f, sdf / TRUNCATION);
-    //         float current_weight = 1.0f;
-    //         float old_tsdf = tsdf_array[k];
-    //         float old_weight = weight_array[k];
-
-    //         float updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
-    //         float updated_weight = old_weight + current_weight;
-
-    //         tsdf_array[k] = updated_tsdf;
-    //         weight_array[k] = updated_weight;
-    //     }
-
-    //     tsdf_array[k] = k; 
-    //     for(uint i = 0; i < 40; ++i)
-    //         tsdf_array[k] = sqrt(tsdf_array[k]);
-    //     weight_array[k] = k;
-    // }
 }
 
 
