@@ -16,37 +16,37 @@ using namespace Eigen;
 class Voxel
 {
 private:
-    float weight;
+    uint8_t weight;
     Vector4uc color;
+
+    inline auto weight_uint8_to_float(uint8_t weight) const -> float
+    {
+        return (float)weight;
+    };
+
+    inline auto weight_float_to_uint8(float w) const -> uint8_t
+    {
+        return (uint8_t)std::min(255, (int)w); 
+    }
 
 public:
     Voxel() {}
 
     Voxel(float value_, float weight_, Vector4uc color_) : weight{weight_}, color{color_} {}
 
-    // inline float getTSDF() const
-    // {
-    //     return value;
-    // }
-
     inline float getWeight()
     {
-        return weight;
+        return weight_uint8_to_float(weight);
+    }
+    
+    inline void setWeight(float w)
+    {
+        weight = weight_float_to_uint8(w);
     }
 
     Vector4uc getColor()
     {
         return color;
-    }
-
-    // inline void setTSDF(float v)
-    // {
-    //     value = v;
-    // }
-
-    inline void setWeight(float w)
-    {
-        weight = w;
     }
 
     inline void setColor(Vector4uc c)
