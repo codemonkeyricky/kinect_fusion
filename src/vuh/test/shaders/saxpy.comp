@@ -47,7 +47,7 @@ void main() {
         {
             float lambda = length(pc / pc[2]);
     		float d = depth[pi[1] * 640 + pi[0]];
-float sdf = d - length((pg - params.translation) / lambda); 
+            float sdf = d - length((pg - params.translation) / lambda); 
 
             if(sdf >= TRUNCATION && d != MINF) 
             {
