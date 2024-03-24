@@ -1,6 +1,6 @@
 #version 440
 
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;             // workgroup size set with specialization constant
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;             // workgroup size set with specialization constant
 layout(push_constant) uniform Parameters {  // push constants
    mat4 rotation; 
    vec4 translation; 
@@ -11,47 +11,98 @@ layout(push_constant) uniform Parameters {  // push constants
 } params;
 
 layout(std430, binding = 0) buffer lay0 { float depth[]; }; // array parameters
-layout(std430, binding = 1) buffer lay1 { float tsdf_array[]; };
-layout(std430, binding = 2) buffer lay2 { float weight_array[]; };
+layout(std430, binding = 1) buffer lay1 { uint tsdf_array[]; };
+layout(std430, binding = 2) buffer lay2 { uint weight_array[]; };
 
 void main() {
-    const uint x = gl_GlobalInvocationID.x; // current offset
-    const uint y = gl_GlobalInvocationID.y; // current offset
-    const uint z = gl_GlobalInvocationID.z; // current offset
+    const uint x = gl_GlobalInvocationID.x;
+    const uint y = gl_GlobalInvocationID.y;
+    const uint z = gl_GlobalInvocationID.z;
  
-    uint k = x * params.l * params.l + y * params.l + z;
+    uint k = x;
 
     float TRUNCATION = -0.06f;
     float MINF = -1000000000.0f;
 
-    vec4 pg = vec4(x, y, z, 0); 
-    vec4 pc = params.rotation * pg + params.translation;
-    ivec4 pi = ivec4(params.intrinsics * pc); 
-
-    // if (pi[0] >= 0 && pi[0] < 640 && pi[0] >= 0 && pi[1] < 480) 
+    uint tsdf_in = tsdf_array[k];
+    uint weight_in = weight_array[k];
+    uint tsdf_out = 0;
+    for (uint i = 0; i < 4; ++i)
     {
-        // calculate the sdf value
-        float lambda = length(pc / pc[2]);
-		float d = depth[pi[1] * 640 + pi[0]];
-        float sdf = d - length((pg - params.translation) / lambda); 
+        // actual index
+        uint kk = k * 4 + i;
 
-        if(sdf >= TRUNCATION && d != MINF) 
+        uint shift = i * 8;
+        uint mask = 0xff << shift;
+
+        uint z = kk % 256;
+        uint y = (kk / 256 ) % 256; 
+        uint x = kk / 256 / 256; 
+
+        // in
+        float tsdf = float((tsdf_in & mask) >> shift) / 127.0f;
+        float weight = float((weight_in & mask) >> shift);
+
+        vec4 pg = vec4(x, y, z, 0); 
+        vec4 pc = params.rotation * pg + params.translation;
+        ivec4 pi = ivec4(params.intrinsics * pc); 
+
+        if (pi[0] >= 0 && pi[0] < 640 && pi[0] >= 0 && pi[1] < 480) 
         {
-            float current_tsdf = min(1.0f, sdf / TRUNCATION);
-            float current_weight = 1.0f;
-            float old_tsdf = tsdf_array[k];
-            float old_weight = weight_array[k];
+            float lambda = length(pc / pc[2]);
+    		float d = depth[pi[1] * 640 + pi[0]];
+            float sdf = d - length((pg - params.translation) / lambda); 
 
-            float updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
-            float updated_weight = old_weight + current_weight;
+            if(sdf >= TRUNCATION && d != MINF) 
+            {
+                float current_tsdf = min(1.0f, sdf / TRUNCATION);
+                float current_weight = 1.0f;
+                float old_tsdf = tsdf_array[k];
+                float old_weight = weight_array[k];
 
-            tsdf_array[k] = updated_tsdf;
-            weight_array[k] = updated_weight;
+                float updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
+                float updated_weight = old_weight + current_weight;
+
+                uint tsdfi = uint(updated_tsdf / 127.0f);
+                tsdf_out |= (tsdfi & 0xff) << shift;
+
+                uint weighti = max(uint(updated_weight), 255); 
+                tsdf_out |= (tsdfi & 0xff) << shift;
+            }
+
         }
 
-        tsdf_array[k] = k;
-        weight_array[k] = k;
+        /*
+         * 
+         */
+
+        // out
     }
+    tsdf_array[k] = tsdf_out;
+
+    // if (pi[0] >= 0 && pi[0] < 640 && pi[0] >= 0 && pi[1] < 480) 
+    // {
+    //     // calculate the sdf value
+
+    //     if(sdf >= TRUNCATION && d != MINF) 
+    //     {
+    //         float current_tsdf = min(1.0f, sdf / TRUNCATION);
+    //         float current_weight = 1.0f;
+    //         float old_tsdf = tsdf_array[k];
+    //         float old_weight = weight_array[k];
+
+    //         float updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
+    //         float updated_weight = old_weight + current_weight;
+
+    //         tsdf_array[k] = updated_tsdf;
+    //         weight_array[k] = updated_weight;
+    //     }
+
+    //     tsdf_array[k] = k; 
+    //     for(uint i = 0; i < 40; ++i)
+    //         tsdf_array[k] = sqrt(tsdf_array[k]);
+    //     weight_array[k] = k;
+    // }
 }
 
 
