@@ -97,6 +97,11 @@ struct alignas(16) matrix4f
     vector4f operator [](int i) const {return data[i];}
     vector4f & operator [](int i) {return data[i];}
 
+    matrix4f() 
+    {
+        data[0][0] = data[1][1] = data[2][2] = data[3][3] = 1;
+    }
+
     inline vector4f operator *(const vector4f &op) const
     {
         vector4f rv = {};

@@ -39,9 +39,8 @@ auto main()-> int {
       };    // shader push-constants interface
    auto program = vuh::Program<Specs, Params>(device, "bazel-bin/src/vuh/saxpy.spv"); // load shader
 
-   matrix4f rot;
+   matrix4f rot, intrs;
    vector4f trans; 
-   matrix4f intrs; 
    program.grid(total /64).spec(64)({rot, trans, intrs, w, h, len}, d_d, d_y, d_x); // run once, wait for completion
 
    auto t2 = std::chrono::high_resolution_clock::now();
