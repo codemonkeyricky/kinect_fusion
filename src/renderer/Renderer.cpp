@@ -298,9 +298,9 @@ static void drawVoxel(Volume &volume)
     glPointSize(5.0f); 
     glBegin(GL_POINTS);
 
-    for (auto x = 0; x < volume.getDimX(); ++x)
-        for (auto y = 0; y < volume.getDimY(); ++y)
-            for (auto z = 0; z < volume.getDimZ(); ++z)
+    for (auto x = 0; x < 256; ++x)
+        for (auto y = 0; y < 256; ++y)
+            for (auto z = 0; z < 256; ++z)
             {
                 auto world = volume.voxelToWorld({x, y, z, 0});
                 auto v = volume.get({x, y, z, 0});
