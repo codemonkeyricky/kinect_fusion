@@ -7,6 +7,8 @@ cc_library(
     ],
     srcs = [
         "Volume.cpp",
+        "volume_integrate_cpu.cpp",
+        "volume_integrate_gpu.cpp",
     ],
     deps = [
         "@eigen",

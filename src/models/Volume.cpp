@@ -370,6 +370,8 @@ void Volume::integrate(Frame &frame)
 	static std::array<float, 2> weight_range = {1e9, -1e9};
 #endif
 
+	// integrate_cpu(depthMap, ex_rotation, ex_translation, in, tsdf, weight);
+
 	for (int i = vox[0] - half; i < vox[0] + half; ++i)
 	{
 		for (int j = vox[1] - half; j < vox[1] + half; ++j)

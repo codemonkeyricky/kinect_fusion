@@ -385,7 +385,6 @@ private:
     //! Computes spacing in x,y,z-directions.
     void compute_ddx_dddx();
 
-
     /*
      *    DYNAMIC_CHUNK feature
      *  Logical coordinates (VA) starts at (0, 0), but to simplify handling of
@@ -402,4 +401,18 @@ private:
 
     void gridAlloc(const vector4f &va);
 
+    auto integrate_cpu(
+        const std::vector<float> &depth,
+        const matrix4f &rotation,
+        const vector4f &translation,
+        const matrix4f &intrinsics,
+        std::vector<uint32_t> &tsdf,
+        std::vector<uint32_t> &weight) -> void;
+
+    // auto integrate_gpu(
+    //     const std::vector<float> &depth,
+    //     const matrix4f &rotation,
+    //     const vector4f &translation,
+    //     const matrix4f &intrinsics,
+    //     std::vector<uint32_t> &tsdf, std::vector<uint32_t> &weight) -> void;
 };
