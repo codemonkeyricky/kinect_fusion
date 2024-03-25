@@ -374,14 +374,15 @@ void Volume::integrate(Frame &frame)
 	integrate_cpu(depthMap,
 				  &tsdf_dir[0][0][0][0],
 				  &weight_dir[0][0][0][0],
-				  ex_rotation, ex_translation, in);
-
-#else 
-	for (int i = vox[0] - half; i < vox[0] + half; ++i)
+				  ex_rotation, ex_translation, 
+				  in, 
+				  translation);
+#else
+	for (int i = 0; i < 256; ++i)
 	{
-		for (int j = vox[1] - half; j < vox[1] + half; ++j)
+		for (int j = 0; j < 256; ++j)
 		{
-			for (int k = vox[2] - half; k < vox[2] + half; ++k)
+			for (int k = 0; k < 256; ++k)
 			{
 				vector4f p = {i, j, k, 0};
 
@@ -396,24 +397,21 @@ void Volume::integrate(Frame &frame)
 						pi[i] = round(pi[i] / pi[2]);
 
 					// get the depth of the point
-					index = pi[1] * width + pi[0];
-					depth = depthMap[index];
+					int index = pi[1] * width + pi[0];
+					float depth = depthMap[index];
 
 					// calculate the sdf value
-					lambda = (pc / pc[2]).norm();
-					sdf = depth - ((pg - translation) / lambda).norm();
-
-					auto &voxel = get({i, j, k, 0});
+					float lambda = (pc / pc[2]).norm();
+					float sdf = depth - ((pg - translation) / lambda).norm();
 
 					// get the previous value and weight
-					tsdf = getTSDF({i, j, k, 0});
-					color = voxel.getColor();
+					float tsdf = getTSDF({i, j, k, 0});
 
 					if (sdf >= -TRUNCATION && depth != MINF)
 					{
 						float current_tsdf = std::min(1.0f, sdf / TRUNCATION);
 						float current_weight = 1.0f;
-						float old_tsdf = tsdf; // voxel.getTSDF();
+						float old_tsdf = tsdf; 
 						float old_weight = getWeight({i, j, k, 0});
 
 						auto updated_tsdf = (old_weight * old_tsdf + current_weight * current_tsdf) / (old_weight + current_weight);
@@ -421,23 +419,6 @@ void Volume::integrate(Frame &frame)
 
 						setTSDF({i, j, k, 0}, updated_tsdf);
 						setWeight({i, j, k, 0}, updated_weight);
-
-						if (sdf <= TRUNCATION / 2 && sdf >= -TRUNCATION / 2)
-						{
-							voxel.setColor(
-								Vector4uc{(const unsigned char)((color[0] * old_weight + colorMap[4 * index + 0] * current_weight) / (old_weight + current_weight)),
-										  (const unsigned char)((color[1] * old_weight + colorMap[4 * index + 1] * current_weight) / (old_weight + current_weight)),
-										  (const unsigned char)((color[2] * old_weight + colorMap[4 * index + 2] * current_weight) / (old_weight + current_weight)),
-										  (const unsigned char)((color[3] * old_weight + colorMap[4 * index + 3] * current_weight) / (old_weight + current_weight))});
-						}
-						++cnt;
-
-#if TRACK_RANGE
-						weight_range[0] = std::min(weight_range[0], updated_weight);
-						weight_range[1] = std::max(weight_range[1], updated_weight);
-						tsdf_range[0] = std::min(tsdf_range[0], updated_tsdf);
-						tsdf_range[1] = std::max(tsdf_range[1], updated_tsdf);
-#endif
 					}
 				}
 			}

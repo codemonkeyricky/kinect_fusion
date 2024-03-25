@@ -405,9 +405,10 @@ private:
         const float *depth,
         const uint32_t *tsdf,
         const uint32_t *weight,
-        const matrix4f &rotation,
-        const vector4f &translation,
-        const matrix4f &intrinsics) -> void;
+        const matrix4f &ext_rotation,
+        const vector4f &ext_translation,
+        const matrix4f &intrinsics,
+        const vector4f &translation) -> void;
 
     // auto integrate_gpu(
     //     const std::vector<float> &depth,

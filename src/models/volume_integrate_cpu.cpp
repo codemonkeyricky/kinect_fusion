@@ -6,9 +6,11 @@ auto Volume::integrate_cpu(
     const float *depthMap,
     const uint32_t *tsdf,
     const uint32_t *weight,
-    const matrix4f &rotation,
-    const vector4f &translation,
-    const matrix4f &intrinsics) -> void
+    const matrix4f &ext_rotation,
+    const vector4f &ext_translation,
+    const matrix4f &intrinsics, 
+    const vector4f &translation
+    ) -> void
 {
     int width = 640; 
     int height = 480;
@@ -23,7 +25,7 @@ auto Volume::integrate_cpu(
 
 				// project the grid point into image space
 				auto pg = voxelToWorld(p);
-				auto pc = rotation * pg + translation;
+				auto pc = ext_rotation * pg + ext_translation;
 				auto pi = intrinsics * pc;
 
 				if (pi[0] >= 0 && pi[0] < 640 * pi[2] && pi[1] >= 0 && pi[1] < 480 * pi[2])
