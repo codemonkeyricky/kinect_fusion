@@ -370,8 +370,13 @@ void Volume::integrate(Frame &frame)
 	static std::array<float, 2> weight_range = {1e9, -1e9};
 #endif
 
-	// integrate_cpu(depthMap, ex_rotation, ex_translation, in, tsdf, weight);
+#if 1
+	integrate_cpu(depthMap,
+				  &tsdf_dir[0][0][0][0],
+				  &weight_dir[0][0][0][0],
+				  ex_rotation, ex_translation, in);
 
+#else 
 	for (int i = vox[0] - half; i < vox[0] + half; ++i)
 	{
 		for (int j = vox[1] - half; j < vox[1] + half; ++j)
@@ -438,6 +443,7 @@ void Volume::integrate(Frame &frame)
 			}
 		}
 	}
+#endif
 
 	// tree->build((Octree::Vox *)vol, 128);
 	auto t1 = std::chrono::high_resolution_clock::now();

@@ -402,12 +402,12 @@ private:
     void gridAlloc(const vector4f &va);
 
     auto integrate_cpu(
-        const std::vector<float> &depth,
+        const float *depth,
+        const uint32_t *tsdf,
+        const uint32_t *weight,
         const matrix4f &rotation,
         const vector4f &translation,
-        const matrix4f &intrinsics,
-        std::vector<uint32_t> &tsdf,
-        std::vector<uint32_t> &weight) -> void;
+        const matrix4f &intrinsics) -> void;
 
     // auto integrate_gpu(
     //     const std::vector<float> &depth,
